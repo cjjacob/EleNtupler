@@ -4,8 +4,11 @@ from subprocess import Popen, PIPE, call
 import itertools
 import ROOT
 
+import efficiency as ef
+
 eos_base  = "/eos/cms/store/group/phys_smp/cojacob/Eff/DZFilterEfficiency"
 root_base = "root://eoscms.cern.ch//eos/cms/store/group/phys_smp/cojacob/Eff/DZFilterEfficiency"
+root_start = "root://eoscms.cern.ch/"
 
 jobs = ["MC", "SingleElectron", "DoubleEG"]
 
@@ -18,6 +21,7 @@ class eos_searcher:
   def __init__(self):
     self.eos_base = "/eos/cms/store/group/phys_smp/cojacob/Eff"
     self.root_base = "root://eoscms.cern.ch//eos/cms/store/group/phys_smp/cojacob/Eff"
+    self.root_start = "root://eoscms.cern.ch/"
     self.jobs = ["MC", "SingleElectron", "DoubleEG"]
     self.sub_dirs = dict()
     self.sub_dirs["MC"] = ["DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8", "DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8", "TTJets_TuneCUETP8M1_13TeV-madgraphMLM-pythia8", "ZToEE_NNPDF30_13TeV-powheg_M_50_120", "ZToEE_NNPDF30_13TeV-powheg_M_120_200", "ZToEE_NNPDF30_13TeV-powheg_M_200_400", "ZToEE_NNPDF30_13TeV-powheg_M_400_800", "ZToEE_NNPDF30_13TeV-powheg_M_800_1400", "ZToEE_NNPDF30_13TeV-powheg_M_1400_2300","WWTo2L2Nu_13TeV-powheg"]
@@ -29,13 +33,13 @@ def find_root_files(directory):
   print "Looking for .root files in %s..." % directory
   out = []
   for subdir, dirs, files in os.walk(directory):
-    print "Searching " + subdir + "..."
+#    print "Searching " + subdir + "..."
     if "failed" in subdir:
       continue
     for f in files:
       if f.endswith(".root"):
 #        print f
-        file_path = subdir + os.sep + f
+        file_path = root_start + subdir + os.sep + f
         out.append(file_path)
   print "Done!"
   return out
@@ -54,8 +58,14 @@ def merge_root_files(root_files,outdir,name):
 def main():
   searcher = eos_searcher()
   for job in searcher.jobs:
+    # this process takes a while, so the poor man's solution is to run it in three terminals, one on each job
+    if job == "DoubleEG" or job == "SingleElectron":
+#    if job == "MC" or job == "DoubleEG":
+#    if job == "MC" or job == "SingleElectron":
+      continue
+    count = 0
     for subdir in searcher.sub_dirs[job]:
-      print " --- Combining .root files in ",
+      print " --- Analyzing .root files in ",
       loc = ""
       if job == "MC":
         loc = eos_base + os.sep + job + os.sep + subdir + os.sep
@@ -63,8 +73,19 @@ def main():
         loc = eos_base + os.sep + job + os.sep + job + os.sep + subdir + os.sep # because crab.
       print loc
       files = find_root_files(loc)
+      for f in files:
+        print "Analyzing %s... " % f,
+        tf = ROOT.TFile(f,"read")
+        tree = tf.Get("/EleNtupler/EventTree")
+        output_filename = "Data" + os.sep + job + os.sep + job + str(count).zfill(3) + ".root"
+        ef.DoDZEff(tree,output_filename)
+        print "Results in %s" % output_filename
+        count += 1
 #      print files
-      merge_root_files(files, searcher.here+os.sep+"Data"+os.sep+job, subdir)
+#      merge_root_files(files, searcher.here+os.sep+"Data"+os.sep+job, subdir)
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    print "\nKeyboardInterrupt!\n"
