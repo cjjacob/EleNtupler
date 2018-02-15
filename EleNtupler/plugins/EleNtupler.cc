@@ -30,20 +30,20 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   trigFilterDeltaRCut_ = iConfig.getParameter<double>("trigFilterDeltaRCut");
 
   vtxLabel_ = consumes<reco::VertexCollection>(iConfig.getParameter<InputTag>("VtxLabel"));
-  vtxBSLabel_ = consumes<reco::VertexCollection>(iConfig.getParameter<InputTag>("VtxBSLabel"));
+  vtxBSLabel_ = consumes<reco::BeamSpot>(iConfig.getParameter<InputTag>("VtxBSLabel"));
   trgEventLabel_            = consumes<trigger::TriggerEvent>         (iConfig.getParameter<InputTag>("triggerEvent"));
   triggerObjectsLabel_      = consumes<pat::TriggerObjectStandAloneCollection>(iConfig.getParameter<edm::InputTag>("triggerEvent"));
   trgResultsLabel_          = consumes<edm::TriggerResults>           (iConfig.getParameter<InputTag>("triggerResults"));
   trgResultsProcess_        =                                          iConfig.getParameter<InputTag>("triggerResults").process();
-  puCollection_             = consumes<vector<PileupSummaryInfo> >    (iConfig.getParameter<InputTag>("pileupCollection"));
+  // puCollection_             = consumes<vector<PileupSummaryInfo> >    (iConfig.getParameter<InputTag>("pileupCollection"));
   electronCollection_       = consumes<View<pat::Electron> >          (iConfig.getParameter<InputTag>("electronSrc"));
-  pfAllParticles_           = consumes<reco::PFCandidateCollection>   (iConfig.getParameter<InputTag>("PFAllCandidates"));
-  pckPFCandidateCollection_ = consumes<pat::PackedCandidateCollection>(iConfig.getParameter<InputTag>("packedPFCands"));
-  pckPFCdsLabel_            = consumes<vector<pat::PackedCandidate>>  (iConfig.getParameter<InputTag>("packedPFCands"));
+  // pfAllParticles_           = consumes<reco::PFCandidateCollection>   (iConfig.getParameter<InputTag>("PFAllCandidates"));
+  // pckPFCandidateCollection_ = consumes<pat::PackedCandidateCollection>(iConfig.getParameter<InputTag>("packedPFCands"));
+  // pckPFCdsLabel_            = consumes<vector<pat::PackedCandidate>>  (iConfig.getParameter<InputTag>("packedPFCands"));
 
-  generatorLabel_           = consumes<GenEventInfoProduct>           (iConfig.getParameter<InputTag>("generatorLabel"));
-  lheEventLabel_            = consumes<LHEEventProduct>               (iConfig.getParameter<InputTag>("LHEEventLabel"));
-  genParticlesCollection_   = consumes<vector<reco::GenParticle>>     (iConfig.getParameter<InputTag>("genParticleSrc"));
+  // generatorLabel_           = consumes<GenEventInfoProduct>           (iConfig.getParameter<InputTag>("generatorLabel"));
+  // lheEventLabel_            = consumes<LHEEventProduct>               (iConfig.getParameter<InputTag>("LHEEventLabel"));
+  // genParticlesCollection_   = consumes<vector<reco::GenParticle>>     (iConfig.getParameter<InputTag>("genParticleSrc"));
 
   // electron ID 
   eleVetoIdMapToken_       = consumes<edm::ValueMap<bool> >(iConfig.getParameter<edm::InputTag>("eleVetoIdMap"));
@@ -57,25 +57,37 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   elePFClusHcalIsoToken_   = mayConsume<edm::ValueMap<float> >(iConfig.getParameter<edm::InputTag>("elePFClusHcalIsoProducer"));
 
   // global event data
-  rhoLabel_        = consumes<double>(iConfig.getParameter<InputTag>("rhoLabel"));
-  rhoCentralLabel_ = consumes<double>(iConfig.getParameter<InputTag>("rhoCentralLabel"));
+  // rhoLabel_        = consumes<double>(iConfig.getParameter<InputTag>("rhoLabel"));
+  // rhoCentralLabel_ = consumes<double>(iConfig.getParameter<InputTag>("rhoCentralLabel"));
 
   edm::Service<TFileService> fs;
   tree_ = fs->make<TTree>("EventTree", "Event data");
-  hEvents_ = fs->make<TH1F>("hEvents", "total processed and skimmed events", 2, 0, 2);
+  hEvents_ = fs->make<TH1D>("hEvents", "total processed and skimmed events", 2, 0, 2);
+
+  // Z data
+  tree_->Branch("ZPt",    &ZPt_);
+  tree_->Branch("ZPz",    &ZPz_);
+  tree_->Branch("ZEta",   &ZEta_);
+  tree_->Branch("ZPhi",   &ZPhi_);
+  tree_->Branch("ZM",     &ZM_);
+  tree_->Branch("Ze0",    &Ze0_);
+  tree_->Branch("Ze1",    &Ze1_);
 
   // global data
-  tree_->Branch("run",             &run_);
-  tree_->Branch("event",           &event_);
-  tree_->Branch("lumis",           &lumis_);
+  // tree_->Branch("run",             &run_);
+  // tree_->Branch("event",           &event_);
+  // tree_->Branch("lumis",           &lumis_);
   tree_->Branch("nVtx",            &nVtx_);
-  tree_->Branch("nGoodVtx",        &nGoodVtx_);
-  tree_->Branch("nTracksPV",       &nTracksPV_);
+  // tree_->Branch("nGoodVtx",        &nGoodVtx_);
+  // tree_->Branch("nTracksPV",       &nTracksPV_);
   tree_->Branch("vtx",             &vtx_);
   tree_->Branch("vty",             &vty_);
   tree_->Branch("vtz",             &vtz_);
-  tree_->Branch("rho",             &rho_);
-  tree_->Branch("rhoCentral",      &rhoCentral_);
+  tree_->Branch("bsx",             &bsx_);
+  tree_->Branch("bsy",             &bsy_);
+  tree_->Branch("bsz",             &bsz_);
+  // tree_->Branch("rho",             &rho_);
+  // tree_->Branch("rhoCentral",      &rhoCentral_);
   tree_->Branch("eleHLTs",         &HLTEle_);
   tree_->Branch("eleHLTprescales", &HLTElePrescaled_);
 
@@ -88,44 +100,42 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   tree_->Branch("elePt",                   &elePt_);
   tree_->Branch("eleEta",                  &eleEta_);
   tree_->Branch("elePhi",                  &elePhi_);
+  tree_->Branch("eleX",                    &eleX_);
+  tree_->Branch("eleY",                    &eleY_);
   tree_->Branch("eleZ",                    &eleZ_);
+  tree_->Branch("gsfTrackX",               &gsfTrackX_);
+  tree_->Branch("gsfTrackY",               &gsfTrackY_);
+  tree_->Branch("gsfTrackZ",               &gsfTrackZ_);
   tree_->Branch("eleMatchedObjPt",         &eleMatchedObjPt_);
   tree_->Branch("eleMatchedObjEta",        &eleMatchedObjEta_);
   tree_->Branch("eleMatchedObjPhi",        &eleMatchedObjPhi_);
-  tree_->Branch("eleMatchedObjZ",          &eleMatchedObjZ_);
-  tree_->Branch("eleMatchedObjDz",         &eleMatchedObjDz_);
   tree_->Branch("eleMatchedObjDR",         &eleMatchedObjDR_);
-  tree_->Branch("eleR9",                   &eleR9_);
-  //tree_->Branch("eleCalibPt",              &eleCalibPt_);
-  //tree_->Branch("eleCalibEn",              &eleCalibEn_);
+  // tree_->Branch("eleR9",                   &eleR9_);
+  // tree_->Branch("eleCalibPt",              &eleCalibPt_);
+  // tree_->Branch("eleCalibEn",              &eleCalibEn_);
   tree_->Branch("eleSCEta",                &eleSCEta_);
   tree_->Branch("eleSCPhi",                &eleSCPhi_);
-  tree_->Branch("eleHoverE",               &eleHoverE_);
-  tree_->Branch("eleSigmaIEtaIEta",        &eleSigmaIEtaIEta_);
-  tree_->Branch("eleSigmaIEtaIPhi",        &eleSigmaIEtaIPhi_);
-  tree_->Branch("eleSigmaIPhiIPhi",        &eleSigmaIPhiIPhi_);
-  tree_->Branch("eleSigmaIEtaIEtaFull5x5", &eleSigmaIEtaIEtaFull5x5_);
-  tree_->Branch("eleSigmaIPhiIPhiFull5x5", &eleSigmaIPhiIPhiFull5x5_);
-  tree_->Branch("eleConvVeto",             &eleConvVeto_);
+  // tree_->Branch("eleHoverE",               &eleHoverE_);
+  // tree_->Branch("eleSigmaIEtaIEta",        &eleSigmaIEtaIEta_);
+  // tree_->Branch("eleSigmaIEtaIPhi",        &eleSigmaIEtaIPhi_);
+  // tree_->Branch("eleSigmaIPhiIPhi",        &eleSigmaIPhiIPhi_);
+  // tree_->Branch("eleSigmaIEtaIEtaFull5x5", &eleSigmaIEtaIEtaFull5x5_);
+  // tree_->Branch("eleSigmaIPhiIPhiFull5x5", &eleSigmaIPhiIPhiFull5x5_);
+  // tree_->Branch("eleConvVeto",             &eleConvVeto_);
+  tree_->Branch("eleHits",                 &eleHits_);
   tree_->Branch("eleMissHits",             &eleMissHits_);
-  tree_->Branch("elePFChIso",              &elePFChIso_);
-  tree_->Branch("elePFPhoIso",             &elePFPhoIso_);
-  tree_->Branch("elePFNeuIso",             &elePFNeuIso_);
-  tree_->Branch("elePFPUIso",              &elePFPUIso_);
-  tree_->Branch("elePFClusEcalIso",        &elePFClusEcalIso_);
-  tree_->Branch("elePFClusHcalIso",        &elePFClusHcalIso_);
-  tree_->Branch("elePFMiniIso",            &elePFMiniIso_);
+  // tree_->Branch("elePFChIso",              &elePFChIso_);
+  // tree_->Branch("elePFPhoIso",             &elePFPhoIso_);
+  // tree_->Branch("elePFNeuIso",             &elePFNeuIso_);
+  // tree_->Branch("elePFPUIso",              &elePFPUIso_);
+  // tree_->Branch("elePFClusEcalIso",        &elePFClusEcalIso_);
+  // tree_->Branch("elePFClusHcalIso",        &elePFClusHcalIso_);
+  // tree_->Branch("elePFMiniIso",            &elePFMiniIso_);
   tree_->Branch("eleIDMVA",                &eleIDMVA_);
-  tree_->Branch("eleFiredSingleTrgs",      &eleFiredSingleTrgs_);
-  tree_->Branch("eleSingleTrigNames",      &eleSingleTrigNames_);
-  tree_->Branch("eleFiredDoubleTrgs",      &eleFiredDoubleTrgs_);
-  tree_->Branch("eleDoubleTrigNames",      &eleDoubleTrigNames_);
   tree_->Branch("eleFiredHLTFilters",      &eleFiredHLTFilters_);
-  tree_->Branch("eleFilterNames",          &eleFilterNames_);
+  // tree_->Branch("eleFilterNames",          &eleFilterNames_);
   tree_->Branch("eleIDbit",                &eleIDbit_);
 
-  eleSingleTrigNames_ = {""};
-  eleDoubleTrigNames_ = {"HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ"};
   eleFilterNames_ = {"hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLDZFilter","hltEle27WPTightGsfTrackIsoFilter"};
 
 }
@@ -140,6 +150,88 @@ EleNtupler::~EleNtupler()
 //
 // member functions
 //
+
+EleNtupler::ZWithEles::ZWithEles(const pat::Electron& e0, const size_t& ei0, const pat::Electron& e1, const size_t& ei1, const vector<UShort_t>& eleIDs)
+{
+  // auto start = chrono::high_resolution_clock::now();
+
+  if ( rand() % 2 ) { eles_.first = ei0; eles_.second = ei1; }
+  else { eles_.first = ei1; eles_.second = ei0; }
+
+  TLorentzVector ve0, ve1;
+  ve0.SetPtEtaPhiM(e0.pt(), e0.eta(), e0.phi(), 0.000511);
+  ve1.SetPtEtaPhiM(e1.pt(), e1.eta(), e1.phi(), 0.000511);
+  TLorentzVector vz = ve0 + ve1;
+
+  Z_ = vz;
+  
+  bool neutral = (e0.charge() * e1.charge()) < 0.0;
+  bool goodMass = fabs( vz.M() - 91.19 ) <= 20.0;
+  
+  bool loose0, loose1;
+  if ( (eleIDs.at(ei0) & 2) > 0 ) { loose0 = true; }
+  if ( (eleIDs.at(ei1) & 2) > 0 ) { loose1 = true; }
+
+  if ( neutral && goodMass && loose0 && loose1 ) {
+    isGoodZ_ = true;
+  } // opp charge and within 20 GeV of Z mass
+  else {
+    isGoodZ_ = false;
+  }
+
+  // auto end = chrono::high_resolution_clock::now();
+  // cout << " |- Constructed ZWithEles in " << chrono::duration_cast<chrono::microseconds>(end-start).count() << " us\n";
+}
+
+EleNtupler::ZWithEles::~ZWithEles() {}
+
+const std::pair<size_t,size_t>& EleNtupler::ZWithEles::Eles() const
+{
+  return this->eles_;
+}
+
+const double EleNtupler::ZWithEles::M() const
+{
+  return this->Z_.M();
+}
+
+const TLorentzVector EleNtupler::ZWithEles::Z() const
+{
+  return this->Z_;
+}
+
+const bool EleNtupler::ZWithEles::IsGoodZ() const
+{
+  return this->isGoodZ_;
+}
+
+void EleNtupler::MakeZList(const edm::View<pat::Electron>& eleView, const vector<UShort_t>& eleIDs)
+{
+  // auto start = chrono::high_resolution_clock::now();
+
+  for ( size_t iEle = 0; iEle < eleView.size()-1; ++iEle ) {
+    for ( size_t jEle = iEle+1; jEle < eleView.size(); ++jEle ) {
+      ZWithEles z(eleView[iEle], iEle, eleView[jEle], jEle, eleIDs);
+      if ( z.IsGoodZ() ) {
+	// keep only good Z's
+	ZList.push_back(z);
+      }
+    }
+  }
+
+  // auto listed = chrono::high_resolution_clock::now();
+  // cout << "--- Made ZList in " << chrono::duration_cast<chrono::microseconds>(listed-start).count() << " us\n";
+
+  // sort by closeness to Z mass
+  std::sort( ZList.begin(), ZList.end(), 
+	     [](const ZWithEles& a, const ZWithEles& b){ return fabs(a.M()-91.19) < fabs(b.M()-91.19); } 
+	     );
+
+  // auto sorted = chrono::high_resolution_clock::now();
+  // cout << "--- Sorted ZList in " << chrono::duration_cast<chrono::microseconds>(sorted-listed).count() << " us\n";
+
+  return;
+}
 
 double EleNtupler::dDeltaPhi(const double& phi1, const double& phi2)
 {
@@ -160,6 +252,10 @@ double EleNtupler::dDeltaR(const double& eta1, const double& phi1, const double&
 void
 EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
 {
+  // cout << "Analyze\n";
+
+  // auto start = chrono::high_resolution_clock::now();
+
   hEvents_->Fill(0.5); // opened event
 
   nEle_ = 0;
@@ -170,38 +266,43 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
   elePt_.clear();
   eleEta_.clear();
   elePhi_.clear();
+  eleX_.clear();
+  eleY_.clear();
   eleZ_.clear();
+  gsfTrackX_.clear();
+  gsfTrackY_.clear();
+  gsfTrackZ_.clear();
   eleMatchedObjPt_.clear();
   eleMatchedObjEta_.clear();
   eleMatchedObjPhi_.clear();
-  eleMatchedObjZ_.clear();
-  eleMatchedObjDz_.clear();
   eleMatchedObjDR_.clear();
-  eleR9_.clear();
-  //eleCalibPt_.clear();
-  //eleCalibEn_.clear();
+  // eleR9_.clear();
+  // eleCalibPt_.clear();
+  // eleCalibEn_.clear();
   eleSCEta_.clear();
   eleSCPhi_.clear();
-  eleHoverE_.clear();
-  eleSigmaIEtaIEta_.clear();
-  eleSigmaIEtaIPhi_.clear();
-  eleSigmaIPhiIPhi_.clear();
-  eleSigmaIEtaIEtaFull5x5_.clear();
-  eleSigmaIPhiIPhiFull5x5_.clear();
-  eleConvVeto_.clear();
+  // eleHoverE_.clear();
+  // eleSigmaIEtaIEta_.clear();
+  // eleSigmaIEtaIPhi_.clear();
+  // eleSigmaIPhiIPhi_.clear();
+  // eleSigmaIEtaIEtaFull5x5_.clear();
+  // eleSigmaIPhiIPhiFull5x5_.clear();
+  // eleConvVeto_.clear();
+  eleHits_.clear();
   eleMissHits_.clear();
-  elePFChIso_.clear();
-  elePFPhoIso_.clear();
-  elePFNeuIso_.clear();
-  elePFPUIso_.clear();
-  elePFClusEcalIso_.clear();
-  elePFClusHcalIso_.clear();
-  elePFMiniIso_.clear();
+  // elePFChIso_.clear();
+  // elePFPhoIso_.clear();
+  // elePFNeuIso_.clear();
+  // elePFPUIso_.clear();
+  // elePFClusEcalIso_.clear();
+  // elePFClusHcalIso_.clear();
+  // elePFMiniIso_.clear();
   eleIDMVA_.clear();
-  eleFiredSingleTrgs_.clear();
-  eleFiredDoubleTrgs_.clear();
   eleFiredHLTFilters_.clear();
   eleIDbit_.clear();
+
+  // auto cleared = chrono::high_resolution_clock::now();
+  // cout << "Cleared vecs in " << chrono::duration_cast<chrono::microseconds>(cleared-start).count() << " us\n";
 
   edm::Handle<edm::View<pat::Electron> > electronHandle;
   e.getByToken(electronCollection_, electronHandle);
@@ -257,11 +358,14 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
     }
   }
 
+  // auto hlts = chrono::high_resolution_clock::now();
+  // cout << "Found HLTs in " << chrono::duration_cast<chrono::microseconds>(hlts-cleared).count() << " us\n";
+
   //edm::Handle<edm::View<pat::Electron> > calibelectronHandle;
   //e.getByToken(calibelectronCollection_, calibelectronHandle);
 
-  edm::Handle<pat::PackedCandidateCollection> pfcands;
-  e.getByToken(pckPFCandidateCollection_, pfcands);
+  // edm::Handle<pat::PackedCandidateCollection> pfcands;
+  // e.getByToken(pckPFCandidateCollection_, pfcands);
 
   if (!electronHandle.isValid()) {
     edm::LogWarning("EleNtupler") << "no electrons in event";
@@ -288,39 +392,46 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
   e.getByToken(elePFClusEcalIsoToken_,    elePFClusEcalIsoValues);
   e.getByToken(elePFClusHcalIsoToken_,    elePFClusHcalIsoValues);
 
+  // auto ids = chrono::high_resolution_clock::now();
+  // cout << "Found IDs in " << chrono::duration_cast<chrono::microseconds>(ids-hlts).count() << " us\n";
+
   edm::Handle<reco::VertexCollection> recVtxs;
   e.getByToken(vtxLabel_, recVtxs);
+
+  edm::Handle<reco::BeamSpot> bsHandle;
+  e.getByToken(vtxBSLabel_, bsHandle);
+  const reco::BeamSpot& beamspot = *bsHandle.product();
+
+  bsx_ = beamspot.position().x();
+  bsy_ = beamspot.position().y();
+  bsz_ = beamspot.position().z();
 
   reco::Vertex vtx;
   math::XYZPoint pv(0, 0, 0);
 
   nVtx_     = -1;
-  nGoodVtx_ = -1;
+  // nGoodVtx_ = -1;
   if ( recVtxs.isValid() ) {
     nVtx_     = 0;
-    nGoodVtx_ = 0;
+    // nGoodVtx_ = 0;
 
     // best-known primary vertex coordinates 
     for (vector<reco::Vertex>::const_iterator v = recVtxs->begin(); v != recVtxs->end(); ++v) {
 
       bool isFake = (v->chi2() == 0 && v->ndof() == 0);
 
-      if ( nVtx_ == 0 ) {
-	nTracksPV_ = v->nTracks();
+      if ( v == recVtxs->begin() && !isFake ) {
+	// nTracksPV_ = v->nTracks();
 	vtx_ = v->x();
 	vty_ = v->y();
 	vtz_ = v->z();
-      }
-
-      if (!isFake) {
 	pv.SetXYZ(v->x(), v->y(), v->z());
 	vtx = *v;
-	break;
       }
 
-      if ( !v->isFake() && v->ndof() > 4. && fabs(v->z()) <= 24. && fabs(v->position().rho()) <= 2. ) {
-	++nGoodVtx_;
-      }
+      // if ( !v->isFake() && v->ndof() > 4. && fabs(v->z()) <= 24. && fabs(v->position().rho()) <= 2. ) {
+      // 	++nGoodVtx_;
+      // }
       ++nVtx_;
 
     } // vtx loop
@@ -330,18 +441,21 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
     edm::LogWarning("EleNtupler") << "Primary vertices info not available";
   }
 
-  edm::Handle<double> rhoHandle;
-  e.getByToken(rhoLabel_, rhoHandle);
+  // auto vtxs = chrono::high_resolution_clock::now();
+  // cout << "Found Vtxs in " << chrono::duration_cast<chrono::microseconds>(vtxs-ids).count() << " us\n";
 
-  edm::Handle<double> rhoCentralHandle;
-  e.getByToken(rhoCentralLabel_, rhoCentralHandle);
+  // edm::Handle<double> rhoHandle;
+  // e.getByToken(rhoLabel_, rhoHandle);
 
-  run_    = e.id().run();
-  event_  = e.id().event();
-  lumis_  = e.luminosityBlock();
-  rho_    = *(rhoHandle.product());
-  if ( rhoCentralHandle.isValid() ) { rhoCentral_ = *(rhoCentralHandle.product()); }
-  else { rhoCentral_ = -99.; }
+  // edm::Handle<double> rhoCentralHandle;
+  // e.getByToken(rhoCentralLabel_, rhoCentralHandle);
+
+  // run_    = e.id().run();
+  // event_  = e.id().event();
+  // lumis_  = e.luminosityBlock();
+  // rho_    = *(rhoHandle.product());
+  // if ( rhoCentralHandle.isValid() ) { rhoCentral_ = *(rhoCentralHandle.product()); }
+  // else { rhoCentral_ = -99.; }
 
   for ( edm::View<pat::Electron>::const_iterator iEle = electronHandle->begin(); iEle != electronHandle->end(); ++iEle ) {
 
@@ -352,29 +466,35 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
     elePt_           .push_back(iEle->pt());
     eleEta_          .push_back(iEle->eta());
     elePhi_          .push_back(iEle->phi());
+    eleX_            .push_back(iEle->vx());
+    eleY_            .push_back(iEle->vy());
     eleZ_            .push_back(iEle->vz());
-    eleR9_           .push_back(iEle->r9());
+    gsfTrackX_       .push_back(iEle->gsfTrack()->vx());
+    gsfTrackY_       .push_back(iEle->gsfTrack()->vy());
+    gsfTrackZ_       .push_back(iEle->gsfTrack()->vz());
+    // eleR9_           .push_back(iEle->r9());
     eleSCEta_        .push_back(iEle->superCluster()->eta());
     eleSCPhi_        .push_back(iEle->superCluster()->phi());
-    eleHoverE_       .push_back(iEle->hcalOverEcal());
-    eleSigmaIEtaIEta_.push_back(iEle->sigmaIetaIeta());
-    eleSigmaIEtaIPhi_.push_back(iEle->sigmaIetaIphi());
-    eleSigmaIPhiIPhi_.push_back(iEle->sigmaIphiIphi());
-    eleConvVeto_     .push_back((Int_t)iEle->passConversionVeto());
+    // eleHoverE_       .push_back(iEle->hcalOverEcal());
+    // eleSigmaIEtaIEta_.push_back(iEle->sigmaIetaIeta());
+    // eleSigmaIEtaIPhi_.push_back(iEle->sigmaIetaIphi());
+    // eleSigmaIPhiIPhi_.push_back(iEle->sigmaIphiIphi());
+    // eleConvVeto_     .push_back((Int_t)iEle->passConversionVeto());
+    eleHits_         .push_back(iEle->gsfTrack()->hitPattern().trackerLayersWithMeasurement());
     eleMissHits_     .push_back(iEle->gsfTrack()->hitPattern().numberOfHits(reco::HitPattern::MISSING_INNER_HITS));
 
-    reco::GsfElectron::PflowIsolationVariables pfIso = iEle->pfIsolationVariables();
-    elePFChIso_ .push_back(pfIso.sumChargedHadronPt);
-    elePFPhoIso_.push_back(pfIso.sumPhotonEt);
-    elePFNeuIso_.push_back(pfIso.sumNeutralHadronEt);
-    elePFPUIso_ .push_back(pfIso.sumPUPt);
-    //elePFMiniIso_.push_back(getMiniIsolation(pfcands, dynamic_cast<const reco::Candidate*>(&(*iEle)), 0.05, 0.2, 10., false));
+    // reco::GsfElectron::PflowIsolationVariables pfIso = iEle->pfIsolationVariables();
+    // elePFChIso_ .push_back(pfIso.sumChargedHadronPt);
+    // elePFPhoIso_.push_back(pfIso.sumPhotonEt);
+    // elePFNeuIso_.push_back(pfIso.sumNeutralHadronEt);
+    // elePFPUIso_ .push_back(pfIso.sumPUPt);
+    // //elePFMiniIso_.push_back(getMiniIsolation(pfcands, dynamic_cast<const reco::Candidate*>(&(*iEle)), 0.05, 0.2, 10., false));
 
-    elePFClusEcalIso_.push_back(iEle->ecalPFClusterIso());
-    elePFClusHcalIso_.push_back(iEle->hcalPFClusterIso());
+    // elePFClusEcalIso_.push_back(iEle->ecalPFClusterIso());
+    // elePFClusHcalIso_.push_back(iEle->hcalPFClusterIso());
 
-    eleSigmaIEtaIEtaFull5x5_.push_back(iEle->full5x5_sigmaIetaIeta());
-    eleSigmaIPhiIPhiFull5x5_.push_back(iEle->full5x5_sigmaIphiIphi());
+    // eleSigmaIEtaIEtaFull5x5_.push_back(iEle->full5x5_sigmaIetaIeta());
+    // eleSigmaIPhiIPhiFull5x5_.push_back(iEle->full5x5_sigmaIphiIphi());
 
     const auto el = electronHandle->ptrAt(nEle_);
 
@@ -403,8 +523,6 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
     eleMatchedObjPt_ .push_back(0.);
     eleMatchedObjEta_.push_back(0.);
     eleMatchedObjPhi_.push_back(0.);
-    eleMatchedObjZ_  .push_back(0.);
-    eleMatchedObjDz_ .push_back(0.);
     eleMatchedObjDR_ .push_back(0.);
 
     for ( pat::TriggerObjectStandAlone obj : *triggerObjHandle ) {
@@ -427,16 +545,7 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
 	  eleMatchedObjPt_ .at(nEle_) = obj.pt();
 	  eleMatchedObjEta_.at(nEle_) = obj.eta();
 	  eleMatchedObjPhi_.at(nEle_) = obj.phi();
-	  eleMatchedObjZ_  .at(nEle_) = obj.vz();
-	  //eleMatchedObjDz_ .at(nEle_) = obj.bestTrack()->dz(pv);
 	  eleMatchedObjDR_ .at(nEle_) = dR;
-	  auto track = obj.bestTrack();
-	  if ( track ) {
-	    eleMatchedObjDz_.at(nEle_) = track->dz(pv);
-	  }
-	  else {
-	    eleMatchedObjDz_.at(nEle_) = pv.Z() - obj.vz();
-	  }
 	  for ( size_t i = 0; i < hasFilters.size(); ++i ) {
 	    if ( hasFilters.at(i) ) {
 	      eleFiredHLTFilters_.at(nEle_) |= ( 0b1<<i );
@@ -470,6 +579,35 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
     ++nEle_;
 
   } // loop on electrons
+
+  // auto elecs = chrono::high_resolution_clock::now();
+  // cout << "Looped over eles in " << chrono::duration_cast<chrono::microseconds>(elecs-vtxs).count() << " us\n";
+
+  ZList.clear();
+  nZ_ = 0;
+  ZPt_.clear();
+  ZPz_.clear();
+  ZEta_.clear();
+  ZPhi_.clear();
+  ZM_.clear();
+  Ze0_.clear();
+  Ze1_.clear();
+  if ( nEle_ > 1 ) {
+    MakeZList(*electronHandle, eleIDbit_);
+    nZ_ = static_cast<int>(ZList.size());
+    for ( const auto& z : ZList ) {
+      ZPt_ .push_back(z.Z().Pt());
+      ZPz_ .push_back(z.Z().Pz());
+      ZEta_.push_back(z.Z().Eta());
+      ZPhi_.push_back(z.Z().Phi());
+      ZM_  .push_back(z.M());
+      Ze0_ .push_back( static_cast<int>(z.Eles().first) );
+      Ze1_ .push_back( static_cast<int>(z.Eles().second) );
+    }
+  }
+
+  // auto zeds = chrono::high_resolution_clock::now();
+  // cout << "Looped over Zs in " << chrono::duration_cast<chrono::microseconds>(zeds-elecs).count() << " us\n";
 
   tree_->Fill();
   hEvents_->Fill(1.5); // processed event with electrons
