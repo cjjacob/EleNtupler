@@ -23,7 +23,7 @@ def MakeEfficiencyHistos(rfile):
   dzlt = TH1F()
   dzlt = tfile.Get("DZLooseEleTotal")
   dzleff = TEfficiency(dzlp, dzlt)
-  dzleff.SetTile("DZ filt eff #Delta z, loose ID")
+  dzleff.SetTitle("DZ filt eff #Delta z, loose ID")
 
   eemp = TH2F()
   eemp = tfile.Get("EtaEtaMedElePass")
@@ -37,14 +37,14 @@ def MakeEfficiencyHistos(rfile):
   dzmt = TH1F()
   dzmt = tfile.Get("DZLooseEleTotal")
   dzmeff = TEfficiency(dzlp, dzlt)
-  dzmeff.SetTile("DZ filt eff #Delta z, loose ID")
+  dzmeff.SetTitle("DZ filt eff #Delta z, loose ID")
 
   dzmgp = TH1F()
   dzmgp = tfile.Get("DZLooseElePass")
   dzmgt = TH1F()
   dzmgt = tfile.Get("DZLooseEleTotal")
   dzmgeff = TEfficiency(dzlp, dzlt)
-  dzmgeff.SetTile("DZ filt eff #Delta z, loose ID")
+  dzmgeff.SetTitle("DZ filt eff #Delta z, loose ID")
 
   eetp = TH2F()
   eetp = tfile.Get("EtaEtaTightElePass")
@@ -58,8 +58,9 @@ def MakeEfficiencyHistos(rfile):
   dztt = TH1F()
   dztt = tfile.Get("DZLooseEleTotal")
   dzteff = TEfficiency(dzlp, dzlt)
-  dzteff.SetTile("DZ filt eff #Delta z, loose ID")
+  dzteff.SetTitle("DZ filt eff #Delta z, loose ID")
 
+#  tfile.Close()
 #  outfile = rfile[:-5]
 #  outfile += "_Eff.root"
 #  out = TFile(outfile,"recreate")
@@ -75,7 +76,8 @@ def MakeEfficiencyHistos(rfile):
   eeteff.Write()
   dzteff.Write()
 
-  rfile.Close()
+#  out.Close()
+  tfile.Close()
   return
 
 def Combine(directory,outdir,name,exclude=[]):
