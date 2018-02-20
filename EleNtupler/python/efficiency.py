@@ -100,92 +100,6 @@ def MakeZs(event, ptCut=0.0):
     Zlist.sort(CompByZMass)
   return Zlist
 
-def DoDZEffFromFile(tfile,output):
-  if os.path.isfile(output):
-    return
-  else:
-    infile = TFile(tfile,"read")
-    tree = infile.Get("/EleNtupler/EventTree")
-
-    outfile = TFile(output, "recreate")
-    ROOT.gFile = outfile
-
-    hMedEleP = TH2F("EtaEtaMedElePass",  "MedElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
-    hMedEleT = TH2F("EtaEtaMedEleTotal", "MedEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
-
-    hDZMedP = TH1F("DZMedElePass",  "DZMedElePass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
-    hDZMedT = TH1F("DZMedEleTotal", "DZMedEleTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
-
-    hDZMedGsfP = TH1F("DZMedEleGsfPass",  "DZMedEleGsfPass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
-    hDZMedGsfT = TH1F("DZMedEleGsfTotal", "DZMedEleGsfTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
-
-    hTightEleP = TH2F("EtaEtaTightElePass",  "TightElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
-    hTightEleT = TH2F("EtaEtaTightEleTotal", "TightEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
-
-    hDZTightP = TH1F("DZTightElePass",  "DZTightElePass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
-    hDZTightT = TH1F("DZTightEleTotal", "DZTightEleTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
-
-    for ev in tree:
-      if ev.nEle > 1:
-        Zlist = filter(GoodZMass, MakeZs(ev,25.0))
-        if len(Zlist) > 0:
-          for Z in Zlist:
-            e0, e1 = Z.eles()
-            if abs(ev.eleZ[e0] - ev.eleZ[e1]) <= 0.26: #opening up range ## pass definition of DZ filter
-              if randint(0,1) == 0: # randomly swap the electrons so e0 isn't always the leading pt ele
-                e0, e1 = e1, e0
-              filt0 = ev.eleFiredHLTFilters[e0]
-              filt1 = ev.eleFiredHLTFilters[e1]
-              # the electrons each have to pass one of the filters
-              if (filt0 & 1 > 0 and filt1 & 2 > 0) or (filt0 & 2 > 0 and filt1 & 1 > 0):
-                # the non-DZ trigger is passed
-                id0 = ev.eleIDbit[e0]
-                id1 = ev.eleIDbit[e1]
-                if (id0>>2)&1 == 1 and (id1>>2)&1 == 1:
-                  #medium id eles
-                  hMedEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
-                  hDZMedT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
-                  hDZMedGsfT.Fill(abs(ev.gsfTrackZ[e0] - ev.gsfTrackZ[e1]))
-                  if filt0 & 4 > 0 or filt1 & 4 > 0:
-                    hMedEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
-                    hDZMedP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
-                    hDZMedGsfT.Fill(abs(ev.gsfTrackZ[e0] - ev.gsfTrackZ[e1]))
-                if (id0>>3)&1 == 1 and (id1>>3)&1 == 1:
-                  #tight id eles
-                  hTightEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
-                  hDZTightT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
-                  if filt0 & 4 > 0 or filt1 & 4 > 0:
-                    hTightEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
-                    hDZTightP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
-
-    hMedEleP.Write()
-    hMedEleT.Write()
-
-    hDZMedP.Write()
-    hDZMedT.Write()
-
-    hDZMedGsfP.Write()
-    hDZMedGsfT.Write()
-
-    hTightEleP.Write()
-    hTightEleT.Write()
-
-    hDZTightP.Write()
-    hDZTightT.Write()
-
-    hMedEleDZEff = TEfficiency(hMedEleP, hMedEleT)
-    hTightEleDZEff = TEfficiency(hTightEleP, hTightEleT)
-    hMedEleDZEff.Write()
-    hTightEleDZEff.Write()
-
-    hDZEffMed = TEfficiency(hDZMedP, hDZMedT)
-    hDZEffTight = TEfficiency(hDZTightP, hDZTightT)
-    hDZEffMed.Write()
-    hDZEffTight.Write()
-
-    outfile.Close()
-    return
-
 def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
   outfile = TFile(output, mode)
   ROOT.gFile = outfile
@@ -218,14 +132,15 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
   for ev in ttree:
     if ev.nEle > 1:
       for iZ in range(len(ev.ZM)):
-        eta0 = ev.eleEta[ev.Ze0[iZ]]
-        eta1 = ev.eleEta[ev.Ze1[iZ]]
-        if (eta0 < -1. and eta1 > 1.) or (eta0 > 1. and eta1 < -1.):
-          hZPtPzOppCorn.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
-        if (eta0 < -1. and eta1 < -1.) or (eta0 > 1. and eta1 > 1.):
-          hZPtPzSimCorn.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
-        if (abs(eta0) < 1. and abs(eta1) < 1.):
-          hZPtPzCentral.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
+        if not (ev.elePt[ev.Ze0[iZ]] > 20. and ev.elePt[ev.Ze1[iZ]] > 20.):
+          eta0 = ev.eleEta[ev.Ze0[iZ]]
+          eta1 = ev.eleEta[ev.Ze1[iZ]]
+          if (eta0 < -1. and eta1 > 1.) or (eta0 > 1. and eta1 < -1.):
+            hZPtPzOppCorn.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
+          if (eta0 < -1. and eta1 < -1.) or (eta0 > 1. and eta1 > 1.):
+            hZPtPzSimCorn.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
+          if (abs(eta0) < 1. and abs(eta1) < 1.):
+            hZPtPzCentral.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
       Zlist = filter(GoodZMass, MakeZs(ev,25.0))
       if len(Zlist) > 0:
         for Z in Zlist:
@@ -244,7 +159,7 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
                 #loose id eles
                 hLooseEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
                 hDZLooseT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
-                if filt0 & 4 > 0 or filt1 & 4 > 0:
+                if filt0 & 4 > 0 and filt1 & 4 > 0:
                   hLooseEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
                   hDZLooseP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
               if (id0>>2)&1 == 1 and (id1>>2)&1 == 1:
@@ -252,7 +167,7 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
                 hMedEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
                 hDZMedT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
                 hDZMedGsfT.Fill(abs(ev.gsfTrackZ[e0] - ev.gsfTrackZ[e1]))
-                if filt0 & 4 > 0 or filt1 & 4 > 0:
+                if filt0 & 4 > 0 and filt1 & 4 > 0:
                   hMedEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
                   hDZMedP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
                   hDZMedGsfP.Fill(abs(ev.gsfTrackZ[e0] - ev.gsfTrackZ[e1]))
@@ -260,7 +175,7 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
                 #tight id eles
                 hTightEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
                 hDZTightT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
-                if filt0 & 4 > 0 or filt1 & 4 > 0:
+                if filt0 & 4 > 0 and filt1 & 4 > 0:
                   hTightEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
                   hDZTightP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
 
