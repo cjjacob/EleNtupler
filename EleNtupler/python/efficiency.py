@@ -1,6 +1,7 @@
 from ROOT import *
 from array import array
 from random import randint
+import os
 
 Leg1Filter = "hltEle23Ele12CaloIdLTrackIdlIsoVLTrackIsoLeg1Filter"
 Leg1FilterBit = 0
@@ -18,12 +19,12 @@ ptBins    = array('d', [0., 10., 11., 12., 13., 14., 21., 22., 23., 24., 25., 30
 nPtBins   = len(ptBins)-1
 etaBins   = array('d', [-2.4, -2.0, -1.6, -1.44, -1., -0.5, 0., 0.5, 1., 1.44, 1.6, 2.0, 2.4])
 nEtaBins  = len(etaBins)-1
-DZBins    = array('d', [0., 0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24])
+DZBins    = array('d', [0., 0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26])
 nDZBins   = len(DZBins)-1
 massBins  = array('d', [61., 62., 63., 64., 65., 66., 67., 68., 69., 70., 71., 72., 73., 74., 75., 76., 77., 78., 79., 80., 81., 82., 83., 84., 85., 86., 87., 88., 89., 90., 91., 92., 93., 94., 95., 96., 97., 98., 99., 100., 101., 102., 103., 104., 105., 106., 107., 108., 109., 110., 111., 112., 113., 114., 115., 116., 117., 118., 119., 120., 121.])
 nMassBins = len(massBins)-1
 
-allDZBins = array('d',[-0.24, -0.22, -0.20, -0.18, -0.16, -0.14, -0.12, -0.10, -0.08, -0.06, -0.04, -0.03, -0.02, -0.01, 0., 0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24])
+allDZBins = array('d',[-0.26, -0.24, -0.22, -0.20, -0.18, -0.16, -0.14, -0.12, -0.10, -0.08, -0.06, -0.04, -0.03, -0.02, -0.01, 0., 0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26])
 nAllDZBins = len(allDZBins)-1
 
 ZMass = 91.19 # PDG value
@@ -99,52 +100,206 @@ def MakeZs(event, ptCut=0.0):
     Zlist.sort(CompByZMass)
   return Zlist
 
-def DoDZEff(ttree):
-  outfile = TFile("DZHistos.root", "recreate")
+def DoDZEffFromFile(tfile,output):
+  if os.path.isfile(output):
+    return
+  else:
+    infile = TFile(tfile,"read")
+    tree = infile.Get("/EleNtupler/EventTree")
+
+    outfile = TFile(output, "recreate")
+    ROOT.gFile = outfile
+
+    hMedEleP = TH2F("EtaEtaMedElePass",  "MedElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
+    hMedEleT = TH2F("EtaEtaMedEleTotal", "MedEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
+
+    hDZMedP = TH1F("DZMedElePass",  "DZMedElePass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
+    hDZMedT = TH1F("DZMedEleTotal", "DZMedEleTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
+
+    hDZMedGsfP = TH1F("DZMedEleGsfPass",  "DZMedEleGsfPass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
+    hDZMedGsfT = TH1F("DZMedEleGsfTotal", "DZMedEleGsfTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
+
+    hTightEleP = TH2F("EtaEtaTightElePass",  "TightElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
+    hTightEleT = TH2F("EtaEtaTightEleTotal", "TightEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
+
+    hDZTightP = TH1F("DZTightElePass",  "DZTightElePass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
+    hDZTightT = TH1F("DZTightEleTotal", "DZTightEleTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
+
+    for ev in tree:
+      if ev.nEle > 1:
+        Zlist = filter(GoodZMass, MakeZs(ev,25.0))
+        if len(Zlist) > 0:
+          for Z in Zlist:
+            e0, e1 = Z.eles()
+            if abs(ev.eleZ[e0] - ev.eleZ[e1]) <= 0.26: #opening up range ## pass definition of DZ filter
+              if randint(0,1) == 0: # randomly swap the electrons so e0 isn't always the leading pt ele
+                e0, e1 = e1, e0
+              filt0 = ev.eleFiredHLTFilters[e0]
+              filt1 = ev.eleFiredHLTFilters[e1]
+              # the electrons each have to pass one of the filters
+              if (filt0 & 1 > 0 and filt1 & 2 > 0) or (filt0 & 2 > 0 and filt1 & 1 > 0):
+                # the non-DZ trigger is passed
+                id0 = ev.eleIDbit[e0]
+                id1 = ev.eleIDbit[e1]
+                if (id0>>2)&1 == 1 and (id1>>2)&1 == 1:
+                  #medium id eles
+                  hMedEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                  hDZMedT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+                  hDZMedGsfT.Fill(abs(ev.gsfTrackZ[e0] - ev.gsfTrackZ[e1]))
+                  if filt0 & 4 > 0 or filt1 & 4 > 0:
+                    hMedEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                    hDZMedP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+                    hDZMedGsfT.Fill(abs(ev.gsfTrackZ[e0] - ev.gsfTrackZ[e1]))
+                if (id0>>3)&1 == 1 and (id1>>3)&1 == 1:
+                  #tight id eles
+                  hTightEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                  hDZTightT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+                  if filt0 & 4 > 0 or filt1 & 4 > 0:
+                    hTightEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                    hDZTightP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+
+    hMedEleP.Write()
+    hMedEleT.Write()
+
+    hDZMedP.Write()
+    hDZMedT.Write()
+
+    hDZMedGsfP.Write()
+    hDZMedGsfT.Write()
+
+    hTightEleP.Write()
+    hTightEleT.Write()
+
+    hDZTightP.Write()
+    hDZTightT.Write()
+
+    hMedEleDZEff = TEfficiency(hMedEleP, hMedEleT)
+    hTightEleDZEff = TEfficiency(hTightEleP, hTightEleT)
+    hMedEleDZEff.Write()
+    hTightEleDZEff.Write()
+
+    hDZEffMed = TEfficiency(hDZMedP, hDZMedT)
+    hDZEffTight = TEfficiency(hDZTightP, hDZTightT)
+    hDZEffMed.Write()
+    hDZEffTight.Write()
+
+    outfile.Close()
+    return
+
+def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
+  outfile = TFile(output, mode)
   ROOT.gFile = outfile
 
-  hMedEleP = TH2F("MedElePass", "MedElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
-  hMedEleT = TH2F("MedEleTot",  "MedEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
+  hLooseEleP = TH2F("EtaEtaLooseElePass",  "LooseElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
+  hLooseEleT = TH2F("EtaEtaLooseEleTotal", "LooseEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
 
-  hTightEleP = TH2F("TightElePass", "TightElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
-  hTightEleT = TH2F("TightEleTot",  "TightEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
+  hDZLooseP = TH1F("DZLooseElePass",  "DZLooseElePass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
+  hDZLooseT = TH1F("DZLooseEleTotal", "DZLooseEleTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
+
+  hMedEleP = TH2F("EtaEtaMedElePass",  "MedElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
+  hMedEleT = TH2F("EtaEtaMedEleTotal", "MedEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
+
+  hDZMedP = TH1F("DZMedElePass",  "DZMedElePass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
+  hDZMedT = TH1F("DZMedEleTotal", "DZMedEleTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
+
+  hDZMedGsfP = TH1F("DZMedEleGsfPass",  "DZMedEleGsfPass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
+  hDZMedGsfT = TH1F("DZMedEleGsfTotal", "DZMedEleGsfTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
+
+  hTightEleP = TH2F("EtaEtaTightElePass",  "TightElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
+  hTightEleT = TH2F("EtaEtaTightEleTotal", "TightEleTot;#eta_{1};#eta_{2}",  nEtaBins, etaBins, nEtaBins, etaBins)
+
+  hDZTightP = TH1F("DZTightElePass",  "DZTightElePass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
+  hDZTightT = TH1F("DZTightEleTotal", "DZTightEleTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
+
+  hZPtPzOppCorn = TH2F("ZPtPzOppCorn", "Z p_{T} p_{z} opposite #eta corners;p_{T} (GeV);p_{z} (GeV)", 30, 0., 300., 30, -600., 600.)
+  hZPtPzSimCorn = TH2F("ZPtPzSimCorn", "Z p_{T} p_{z} similar  #eta corners;p_{T} (GeV);p_{z} (GeV)", 30, 0., 300., 30, -600., 600.)
+  hZPtPzCentral = TH2F("ZPtPzCentral", "Z p_{T} p_{z} central #eta region;p_{T} (GeV);p_{z} (GeV)", 30, 0., 300., 30, -600., 600.)
 
   for ev in ttree:
     if ev.nEle > 1:
+      for iZ in range(len(ev.ZM)):
+        eta0 = ev.eleEta[ev.Ze0[iZ]]
+        eta1 = ev.eleEta[ev.Ze1[iZ]]
+        if (eta0 < -1. and eta1 > 1.) or (eta0 > 1. and eta1 < -1.):
+          hZPtPzOppCorn.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
+        if (eta0 < -1. and eta1 < -1.) or (eta0 > 1. and eta1 > 1.):
+          hZPtPzSimCorn.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
+        if (abs(eta0) < 1. and abs(eta1) < 1.):
+          hZPtPzCentral.Fill(ev.ZPt[iZ], ev.ZPz[iZ])
       Zlist = filter(GoodZMass, MakeZs(ev,25.0))
       if len(Zlist) > 0:
         for Z in Zlist:
           e0, e1 = Z.eles()
-          if randint(0,1) == 0: # randomly swap the electrons so e0 isn't always the leading pt ele
-            e0, e1 = e1, e0
-          filt0 = ev.eleFiredHLTFilters[e0]
-          filt1 = ev.eleFiredHLTFilters[e1]
-          # the electrons each have to pass one of the filters
-          if (filt0 & 1 > 0 and filt1 & 2 > 0) or (filt0 & 2 > 0 and filt1 & 1 > 0):
-            # the non-DZ trigger is passed
-            id0 = ev.eleIDbit[e0]
-            id1 = ev.eleIDbit[e1]
-            if (id0>>2)&1 == 1 and (id1>>2)&1 == 1:
-              #medium id eles
-              hMedEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
-              if filt0 & 4 > 0 or filt1 & 4 > 0:
-                hMedEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
-            if (id0>>3)&1 == 1 and (id1>>3)&1 == 1:
-              #tight id eles
-              hTightEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
-              if filt0 & 4 > 0 or filt1 & 4 > 0:
-                hTightEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
+          if abs(ev.eleZ[e0] - ev.eleZ[e1]) <= 0.26: #open up to fail region ## pass definition of DZ filter
+            if randint(0,1) == 0: # randomly swap the electrons so e0 isn't always the leading pt ele
+              e0, e1 = e1, e0
+            filt0 = ev.eleFiredHLTFilters[e0]
+            filt1 = ev.eleFiredHLTFilters[e1]
+            # the electrons each have to pass one of the filters
+            if (filt0 & 1 > 0 and filt1 & 2 > 0) or (filt0 & 2 > 0 and filt1 & 1 > 0):
+              # the non-DZ trigger is passed
+              id0 = ev.eleIDbit[e0]
+              id1 = ev.eleIDbit[e1]
+              if (id0>>1)&1 == 1 and (id1>>1)&1 == 1:
+                #loose id eles
+                hLooseEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                hDZLooseT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+                if filt0 & 4 > 0 or filt1 & 4 > 0:
+                  hLooseEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                  hDZLooseP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+              if (id0>>2)&1 == 1 and (id1>>2)&1 == 1:
+                #medium id eles
+                hMedEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                hDZMedT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+                hDZMedGsfT.Fill(abs(ev.gsfTrackZ[e0] - ev.gsfTrackZ[e1]))
+                if filt0 & 4 > 0 or filt1 & 4 > 0:
+                  hMedEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                  hDZMedP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+                  hDZMedGsfP.Fill(abs(ev.gsfTrackZ[e0] - ev.gsfTrackZ[e1]))
+              if (id0>>3)&1 == 1 and (id1>>3)&1 == 1:
+                #tight id eles
+                hTightEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                hDZTightT.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+                if filt0 & 4 > 0 or filt1 & 4 > 0:
+                  hTightEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
+                  hDZTightP.Fill(abs(ev.eleZ[e0] - ev.eleZ[e1]))
+
+  hLooseEleP.Write()
+  hLooseEleT.Write()
+
+  hDZLooseP.Write()
+  hDZLooseT.Write()
 
   hMedEleP.Write()
   hMedEleT.Write()
+
+  hDZMedP.Write()
+  hDZMedT.Write()
+
+  hDZMedGsfP.Write()
+  hDZMedGsfT.Write()
+
   hTightEleP.Write()
   hTightEleT.Write()
 
-  hMedEleDZEff = TEfficiency(hMedEleP, hMedEleT)
-  hTightEleDZEff = TEfficiency(hTightEleP, hTightEleT)
+  hDZTightP.Write()
+  hDZTightT.Write()
 
-  hMedEleDZEff.Write()
-  hTightEleDZEff.Write()
+#  hMedEleDZEff = TEfficiency(hMedEleP, hMedEleT)
+#  hTightEleDZEff = TEfficiency(hTightEleP, hTightEleT)
+#  hMedEleDZEff.Write()
+#  hTightEleDZEff.Write()
+
+#  hDZEffMed = TEfficiency(hDZMedP, hDZMedT)
+#  hDZEffTight = TEfficiency(hDZTightP, hDZTightT)
+#  hDZEffMed.Write()
+#  hDZEffTight.Write()
+
+  hZPtPzOppCorn.Write()
+  hZPtPzSimCorn.Write()
+  hZPtPzCentral.Write()
+
+  outfile.Close()
 
 def DoFilters(ttree):
   outfile = TFile("FilterHistos.root", "recreate")
