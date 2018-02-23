@@ -52,7 +52,7 @@ config.Data.inputDataset    = '/TTJets_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/Ru
 submit(config)
 
 print "--- Submitting WWTo2L2Nu powheg ---"
-config.General.requestName  = "WWToL2Nu_powheg_actual"
+config.General.requestName  = "WWToL2Nu_powheg"
 config.Data.inputDataset    = '/WWTo2L2Nu_13TeV-powheg/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM'
 submit(config)
 
@@ -66,9 +66,10 @@ config.General.requestName  = 'DYToLL_madgraph_Moriond17'
 config.Data.inputDataset    = '/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2/MINIAODSIM'
 submit(config)
 
-#config.General.requestName  = 'WJets_madgraph'
-#config.Data.inputDataset    = '/WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISpring16MiniAODv1-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v2/MINIAODSIM'
-#submit(config)
+print "--- Submitting WJets_madgraph ---"
+config.General.requestName  = 'WJets_madgraph'
+config.Data.inputDataset    = '/WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISpring16MiniAODv1-PUSpring16_80X_mcRun2_asymptotic_2016_v3-v2/MINIAODSIM'
+submit(config)
 
 print "--- Submitting DYtoEE_powheg_m50_120 ---"
 config.General.requestName  = 'DYToEE_powheg_m50_120'
@@ -150,50 +151,50 @@ config.General.requestName  = '2016prompt_RunHv3_SE'
 config.Data.inputDataset    = '/SingleElectron/Run2016H-03Feb2017_ver3-v1/MINIAOD'
 submit(config)
 
-##### now submit DoubleEG DATA
-config.Data.outLFNDirBase = '%s/%s/' % (mainOutputDir,'DoubleEG')
-config.Data.splitting     = 'LumiBased'
-config.Data.lumiMask      = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt'
-config.Data.unitsPerJob   = 100
-config.JobType.pyCfgParams  = ['GlobalTag=80X_dataRun2_2016SeptRepro_v7']
+# ##### now submit DoubleEG DATA
+# config.Data.outLFNDirBase = '%s/%s/' % (mainOutputDir,'DoubleEG')
+# config.Data.splitting     = 'LumiBased'
+# config.Data.lumiMask      = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt'
+# config.Data.unitsPerJob   = 100
+# config.JobType.pyCfgParams  = ['GlobalTag=80X_dataRun2_2016SeptRepro_v7']
 
-print "--- Submitting Run2016B ---"
-config.General.requestName  = '2016rereco_RunB_DE'
-config.Data.inputDataset    = '/DoubleEG/Run2016B-03Feb2017_ver2-v2/MINIAOD'
-submit(config)
+# print "--- Submitting Run2016B ---"
+# config.General.requestName  = '2016rereco_RunB_DE'
+# config.Data.inputDataset    = '/DoubleEG/Run2016B-03Feb2017_ver2-v2/MINIAOD'
+# submit(config)
 
-print "--- Submitting Run2016C ---"
-config.General.requestName  = '2016rereco_RunC_DE'
-config.Data.inputDataset    = '/DoubleEG/Run2016C-03Feb2017-v1/MINIAOD'
-submit(config)
+# print "--- Submitting Run2016C ---"
+# config.General.requestName  = '2016rereco_RunC_DE'
+# config.Data.inputDataset    = '/DoubleEG/Run2016C-03Feb2017-v1/MINIAOD'
+# submit(config)
 
-print "--- Submitting Run2016D ---"
-config.General.requestName  = '2016rereco_RunD_DE'
-config.Data.inputDataset    = '/DoubleEG/Run2016D-03Feb2017-v1/MINIAOD'
-submit(config)
+# print "--- Submitting Run2016D ---"
+# config.General.requestName  = '2016rereco_RunD_DE'
+# config.Data.inputDataset    = '/DoubleEG/Run2016D-03Feb2017-v1/MINIAOD'
+# submit(config)
 
-print "--- Submitting Run2016E ---"
-config.General.requestName  = '2016rereco_RunE_DE'
-config.Data.inputDataset    = '/DoubleEG/Run2016E-03Feb2017-v1/MINIAOD'
-submit(config)
+# print "--- Submitting Run2016E ---"
+# config.General.requestName  = '2016rereco_RunE_DE'
+# config.Data.inputDataset    = '/DoubleEG/Run2016E-03Feb2017-v1/MINIAOD'
+# submit(config)
 
-print "--- Submitting Run2016F ---"
-config.General.requestName  = '2016rereco_RunF_DE'
-config.Data.inputDataset    = '/DoubleEG/Run2016F-03Feb2017-v1/MINIAOD'
-submit(config)
+# print "--- Submitting Run2016F ---"
+# config.General.requestName  = '2016rereco_RunF_DE'
+# config.Data.inputDataset    = '/DoubleEG/Run2016F-03Feb2017-v1/MINIAOD'
+# submit(config)
 
-print "--- Submitting Run2016G ---"
-config.General.requestName  = '2016rereco_RunG_DE'
-config.Data.inputDataset    = '/DoubleEG/Run2016G-03Feb2017-v1/MINIAOD'
-submit(config)
+# print "--- Submitting Run2016G ---"
+# config.General.requestName  = '2016rereco_RunG_DE'
+# config.Data.inputDataset    = '/DoubleEG/Run2016G-03Feb2017-v1/MINIAOD'
+# submit(config)
 
-config.JobType.pyCfgParams = ['GlobalTag=80X_dataRun2_Prompt_v16']
-print "--- Submitting Run2016H2 ---"
-config.General.requestName  = '2016prompt_RunHv2_DE'
-config.Data.inputDataset    = '/DoubleEG/Run2016H-03Feb2017_ver2-v1/MINIAOD'
-submit(config)
+# config.JobType.pyCfgParams = ['GlobalTag=80X_dataRun2_Prompt_v16']
+# print "--- Submitting Run2016H2 ---"
+# config.General.requestName  = '2016prompt_RunHv2_DE'
+# config.Data.inputDataset    = '/DoubleEG/Run2016H-03Feb2017_ver2-v1/MINIAOD'
+# submit(config)
 
-print "--- Submitting Run2016H3 ---"
-config.General.requestName  = '2016prompt_RunHv3_DE'
-config.Data.inputDataset    = '/DoubleEG/Run2016H-03Feb2017_ver3-v1/MINIAOD'
-submit(config)
+# print "--- Submitting Run2016H3 ---"
+# config.General.requestName  = '2016prompt_RunHv3_DE'
+# config.Data.inputDataset    = '/DoubleEG/Run2016H-03Feb2017_ver3-v1/MINIAOD'
+# submit(config)
