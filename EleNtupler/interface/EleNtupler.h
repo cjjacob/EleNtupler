@@ -99,8 +99,9 @@ class EleNtupler : public edm::EDAnalyzer {
   edm::EDGetTokenT<edm::TriggerResults>            trgResultsLabel_;
   string                                           trgResultsProcess_;
   // edm::EDGetTokenT<vector<PileupSummaryInfo> >     puCollection_;
-  edm::EDGetTokenT<edm::View<pat::Electron> >      electronCollection_;
-  edm::EDGetTokenT<reco::PFCandidateCollection>    pfAllParticles_;
+  edm::EDGetTokenT<edm::View<pat::Electron>>       electronCollection_;
+  edm::EDGetTokenT<edm::View<pat::Photon>>         photonCollection_;
+  // edm::EDGetTokenT<reco::PFCandidateCollection>    pfAllParticles_;
   // edm::EDGetTokenT<vector<pat::PackedCandidate> >  pckPFCdsLabel_;
   // edm::EDGetTokenT<pat::PackedCandidateCollection> pckPFCandidateCollection_;
   // edm::EDGetTokenT<GenEventInfoProduct>            generatorLabel_;
@@ -159,10 +160,6 @@ class EleNtupler : public edm::EDAnalyzer {
   vector<float>  gsfTrackX_;
   vector<float>  gsfTrackY_;
   vector<float>  gsfTrackZ_;
-  vector<float>  eleMatchedObjPt_;
-  vector<float>  eleMatchedObjEta_;
-  vector<float>  eleMatchedObjPhi_;
-  vector<float>  eleMatchedObjDR_;
   // vector<float>  eleR9_;
   // vector<float>  eleCalibPt_;
   // vector<float>  eleCalibEn_;
@@ -176,6 +173,7 @@ class EleNtupler : public edm::EDAnalyzer {
   // vector<float>  eleSigmaIPhiIPhiFull5x5_;
   // vector<int>    eleConvVeto_;
   vector<int>    eleHits_;
+  vector<int>    eleValidPixHits_;
   vector<int>    eleMissHits_;
   // vector<float>  elePFChIso_;
   // vector<float>  elePFPhoIso_;
@@ -189,6 +187,23 @@ class EleNtupler : public edm::EDAnalyzer {
   vector<string> eleFilterNames_;
   vector<UShort_t> eleIDbit_;
 
+  // Trig Obj
+  Int_t nTO_;
+  vector<float>          TrigObjPt_;
+  vector<float>          TrigObjEta_;
+  vector<float>          TrigObjPhi_;
+  vector<float>          TrigObjEnergy_;
+  vector<float>          TrigObjDR_;
+  vector<int>            TrigObjMatchedEle_;
+  vector<vector<int>>    TrigObjType_;
+  vector<UInt_t>         TrigObjFiredFilters_;
+
+  // Photon
+  Int_t nPho_;
+  vector<float>  phoPt_;
+  vector<float>  phoEta_;
+  vector<float>  phoPhi_;
+  vector<float>  phoEnergy_;
 };
 
 #endif // EleNtupler_h

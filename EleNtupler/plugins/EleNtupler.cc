@@ -36,7 +36,8 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   trgResultsLabel_          = consumes<edm::TriggerResults>           (iConfig.getParameter<InputTag>("triggerResults"));
   trgResultsProcess_        =                                          iConfig.getParameter<InputTag>("triggerResults").process();
   // puCollection_             = consumes<vector<PileupSummaryInfo> >    (iConfig.getParameter<InputTag>("pileupCollection"));
-  electronCollection_       = consumes<View<pat::Electron> >          (iConfig.getParameter<InputTag>("electronSrc"));
+  electronCollection_       = consumes<View<pat::Electron>>           (iConfig.getParameter<InputTag>("electronSrc"));
+  photonCollection_         = consumes<View<pat::Photon>>             (iConfig.getParameter<InputTag>("photonSrc"));
   // pfAllParticles_           = consumes<reco::PFCandidateCollection>   (iConfig.getParameter<InputTag>("PFAllCandidates"));
   // pckPFCandidateCollection_ = consumes<pat::PackedCandidateCollection>(iConfig.getParameter<InputTag>("packedPFCands"));
   // pckPFCdsLabel_            = consumes<vector<pat::PackedCandidate>>  (iConfig.getParameter<InputTag>("packedPFCands"));
@@ -107,10 +108,6 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   tree_->Branch("gsfTrackX",               &gsfTrackX_);
   tree_->Branch("gsfTrackY",               &gsfTrackY_);
   tree_->Branch("gsfTrackZ",               &gsfTrackZ_);
-  tree_->Branch("eleMatchedObjPt",         &eleMatchedObjPt_);
-  tree_->Branch("eleMatchedObjEta",        &eleMatchedObjEta_);
-  tree_->Branch("eleMatchedObjPhi",        &eleMatchedObjPhi_);
-  tree_->Branch("eleMatchedObjDR",         &eleMatchedObjDR_);
   // tree_->Branch("eleR9",                   &eleR9_);
   // tree_->Branch("eleCalibPt",              &eleCalibPt_);
   // tree_->Branch("eleCalibEn",              &eleCalibEn_);
@@ -124,6 +121,7 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   // tree_->Branch("eleSigmaIPhiIPhiFull5x5", &eleSigmaIPhiIPhiFull5x5_);
   // tree_->Branch("eleConvVeto",             &eleConvVeto_);
   tree_->Branch("eleHits",                 &eleHits_);
+  tree_->Branch("eleValidPixHits",         &eleValidPixHits_);
   tree_->Branch("eleMissHits",             &eleMissHits_);
   // tree_->Branch("elePFChIso",              &elePFChIso_);
   // tree_->Branch("elePFPhoIso",             &elePFPhoIso_);
@@ -136,6 +134,24 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   tree_->Branch("eleFiredHLTFilters",      &eleFiredHLTFilters_);
   // tree_->Branch("eleFilterNames",          &eleFilterNames_);
   tree_->Branch("eleIDbit",                &eleIDbit_);
+
+  // TrigObj
+  tree_->Branch("nTO",                 &nTO_);
+  tree_->Branch("TrigObjPt",           &TrigObjPt_);
+  tree_->Branch("TrigObjEta",          &TrigObjEta_);
+  tree_->Branch("TrigObjPhi",          &TrigObjPhi_);
+  tree_->Branch("TrigObjEnergy",       &TrigObjEnergy_);
+  tree_->Branch("TrigObjDR",           &TrigObjDR_);
+  tree_->Branch("TrigObjMatchedEle",   &TrigObjMatchedEle_);
+  tree_->Branch("TrigObjType",         &TrigObjType_);
+  tree_->Branch("TrigObjFiredFilters", &TrigObjFiredFilters_);
+
+  // photon
+  tree_->Branch("nPho",      &nPho_);
+  tree_->Branch("phoPt",     &phoPt_);
+  tree_->Branch("phoEta",    &phoEta_);
+  tree_->Branch("phoPhi",    &phoPhi_);
+  tree_->Branch("phoEnergy", &phoEnergy_);
 
   eleFilterNames_ = {"hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLDZFilter","hltEle27WPTightGsfTrackIsoFilter"};
 
@@ -273,10 +289,6 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
   gsfTrackX_.clear();
   gsfTrackY_.clear();
   gsfTrackZ_.clear();
-  eleMatchedObjPt_.clear();
-  eleMatchedObjEta_.clear();
-  eleMatchedObjPhi_.clear();
-  eleMatchedObjDR_.clear();
   // eleR9_.clear();
   // eleCalibPt_.clear();
   // eleCalibEn_.clear();
@@ -290,6 +302,7 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
   // eleSigmaIPhiIPhiFull5x5_.clear();
   // eleConvVeto_.clear();
   eleHits_.clear();
+  eleValidPixHits_.clear();
   eleMissHits_.clear();
   // elePFChIso_.clear();
   // elePFPhoIso_.clear();
@@ -302,10 +315,28 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
   eleFiredHLTFilters_.clear();
   eleIDbit_.clear();
 
+  // TrigObj
+  nTO_ = 0;
+  TrigObjPt_.clear();
+  TrigObjEta_.clear();
+  TrigObjPhi_.clear();
+  TrigObjEnergy_.clear();
+  TrigObjDR_.clear();
+  TrigObjMatchedEle_.clear();
+  TrigObjType_.clear();
+  TrigObjFiredFilters_.clear();
+
+  // photon
+  nPho_ = 0;
+  phoPt_.clear();
+  phoEta_.clear();
+  phoPhi_.clear();
+  phoEnergy_.clear();
+
   // auto cleared = chrono::high_resolution_clock::now();
   // cout << "Cleared vecs in " << chrono::duration_cast<chrono::microseconds>(cleared-start).count() << " us\n";
 
-  edm::Handle<edm::View<pat::Electron> > electronHandle;
+  edm::Handle<edm::View<pat::Electron>> electronHandle;
   e.getByToken(electronCollection_, electronHandle);
 
   edm::Handle<pat::TriggerObjectStandAloneCollection> triggerObjHandle;
@@ -313,6 +344,9 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
 
   edm::Handle<edm::TriggerResults> triggerResultsHandle;
   e.getByToken(trgResultsLabel_, triggerResultsHandle);
+
+  edm::Handle<edm::View<pat::Photon>> photonHandle;
+  e.getByToken(photonCollection_, photonHandle);
 
   bool cfg_changed = true;
   HLTConfigProvider hltCfg;
@@ -482,6 +516,7 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
     // eleSigmaIPhiIPhi_.push_back(iEle->sigmaIphiIphi());
     // eleConvVeto_     .push_back((Int_t)iEle->passConversionVeto());
     eleHits_         .push_back(iEle->gsfTrack()->hitPattern().trackerLayersWithMeasurement());
+    eleValidPixHits_ .push_back(iEle->gsfTrack()->hitPattern().numberOfValidPixelHits());
     eleMissHits_     .push_back(iEle->gsfTrack()->hitPattern().numberOfHits(reco::HitPattern::MISSING_INNER_HITS));
 
     // reco::GsfElectron::PflowIsolationVariables pfIso = iEle->pfIsolationVariables();
@@ -519,63 +554,65 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
 
     eleFiredHLTFilters_.push_back(0U);
 
+    //// moved trigger objects to their own loop
+
     // in case there is no matched obj, we'll fill the data with zeros
     // then, if there is a matched obj, we'll overwrite the zeros at position nEle_
-    eleMatchedObjPt_ .push_back(0.);
-    eleMatchedObjEta_.push_back(0.);
-    eleMatchedObjPhi_.push_back(0.);
-    eleMatchedObjDR_ .push_back(0.);
+    // eleMatchedObjPt_ .push_back(0.);
+    // eleMatchedObjEta_.push_back(0.);
+    // eleMatchedObjPhi_.push_back(0.);
+    // eleMatchedObjDR_ .push_back(0.);
 
-    for ( pat::TriggerObjectStandAlone obj : *triggerObjHandle ) {
-      obj.unpackPathNames(names);
+    // for ( pat::TriggerObjectStandAlone obj : *triggerObjHandle ) {
+    //   obj.unpackPathNames(names);
 
-      vector<bool> hasFilters(eleFilterNames_.size(),false);
-      for ( string iFilter : obj.filterLabels() ) {
-	auto it = std::find(eleFilterNames_.begin(), eleFilterNames_.end(), iFilter);
-	if ( it != eleFilterNames_.end() ) {
-	  hasFilters.at(it - eleFilterNames_.begin()) = true;
-	}
-      } // loop on filters
+    //   vector<bool> hasFilters(eleFilterNames_.size(),false);
+    //   for ( string iFilter : obj.filterLabels() ) {
+    // 	auto it = std::find(eleFilterNames_.begin(), eleFilterNames_.end(), iFilter);
+    // 	if ( it != eleFilterNames_.end() ) {
+    // 	  hasFilters.at(it - eleFilterNames_.begin()) = true;
+    // 	}
+    //   } // loop on filters
 
-      if ( std::any_of(hasFilters.begin(), hasFilters.end(), [](bool b){return b;}) ) {
-	double dR = dDeltaR(iEle->eta(), iEle->phi(), obj.eta(), obj.phi());
-	if ( dR < trigFilterDeltaRCut_ ) {
-	  // as described above, we want the matched obj to be aligned with the electron it matches
-	  // we could be more space efficient with an additional variable, vector<size_t> eleMatchedObjWhichEle_
-	  // then, however, we'd have to loop over the objects rather than the electrons
-	  eleMatchedObjPt_ .at(nEle_) = obj.pt();
-	  eleMatchedObjEta_.at(nEle_) = obj.eta();
-	  eleMatchedObjPhi_.at(nEle_) = obj.phi();
-	  eleMatchedObjDR_ .at(nEle_) = dR;
-	  for ( size_t i = 0; i < hasFilters.size(); ++i ) {
-	    if ( hasFilters.at(i) ) {
-	      eleFiredHLTFilters_.at(nEle_) |= ( 0b1<<i );
-	    }
-	  } // pushing filter info into tree variable
-	} // trig obj matches electron
-      } // is one of the filters of interest
+    //   if ( std::any_of(hasFilters.begin(), hasFilters.end(), [](bool b){return b;}) ) {
+    // 	double dR = dDeltaR(iEle->eta(), iEle->phi(), obj.eta(), obj.phi());
+    // 	if ( dR < trigFilterDeltaRCut_ ) {
+    // 	  // as described above, we want the matched obj to be aligned with the electron it matches
+    // 	  // we could be more space efficient with an additional variable, vector<size_t> eleMatchedObjWhichEle_
+    // 	  // then, however, we'd have to loop over the objects rather than the electrons
+    // 	  eleMatchedObjPt_ .at(nEle_) = obj.pt();
+    // 	  eleMatchedObjEta_.at(nEle_) = obj.eta();
+    // 	  eleMatchedObjPhi_.at(nEle_) = obj.phi();
+    // 	  eleMatchedObjDR_ .at(nEle_) = dR;
+    // 	  for ( size_t i = 0; i < hasFilters.size(); ++i ) {
+    // 	    if ( hasFilters.at(i) ) {
+    // 	      eleFiredHLTFilters_.at(nEle_) |= ( 0b1<<i );
+    // 	    }
+    // 	  } // pushing filter info into tree variable
+    // 	} // trig obj matches electron
+    //   } // is one of the filters of interest
 
-      /*
-      // probably faster than above method. N_objFilt log(N_objFilt) + min(N_objFilt,N_filt)
-      // whereas the above is N_objFilt * N_filt, but requires more memory
-      vector<string> filters = obj.filterLabels();
-      vector<string> ourFilts = eleFilterNames_;
-      vector<string> intersect;
-      std::sort(filters.begin(), filters.end());
-      std::sort(eleFilterNames_.begin(), eleFilterNames_.end());
-      auto it = std::set_intersect(filters.begin(), filters.end(), eleFilterNames_.begin(), eleFilterNames_.end(), intersect.begin());
-      if ( it != intersect.begin() ) {
-        for ( string iF : intersect ) {
-	  for ( size_t iFN = 0; iFN < eleFilterNames_.size(); ++iFN ) {
-	    if ( iF == eleFilterNames_.at(iFN) ) {
-  	      eleFiredHLTFilters_.at(nEle_) |= ( 0b1 << iFN );
-	    }
-	  }
-	}
-      }
-      */
+    //   /*
+    //   // probably faster than above method. N_objFilt log(N_objFilt) + min(N_objFilt,N_filt)
+    //   // whereas the above is N_objFilt * N_filt, but requires more memory
+    //   vector<string> filters = obj.filterLabels();
+    //   vector<string> ourFilts = eleFilterNames_;
+    //   vector<string> intersect;
+    //   std::sort(filters.begin(), filters.end());
+    //   std::sort(eleFilterNames_.begin(), eleFilterNames_.end());
+    //   auto it = std::set_intersect(filters.begin(), filters.end(), eleFilterNames_.begin(), eleFilterNames_.end(), intersect.begin());
+    //   if ( it != intersect.begin() ) {
+    //     for ( string iF : intersect ) {
+    // 	  for ( size_t iFN = 0; iFN < eleFilterNames_.size(); ++iFN ) {
+    // 	    if ( iF == eleFilterNames_.at(iFN) ) {
+    // 	      eleFiredHLTFilters_.at(nEle_) |= ( 0b1 << iFN );
+    // 	    }
+    // 	  }
+    // 	}
+    //   }
+    //   */
 
-    } // loop on trigger objs
+    // } // loop on trigger objs
 
     ++nEle_;
 
@@ -609,6 +646,63 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
 
   // auto zeds = chrono::high_resolution_clock::now();
   // cout << "Looped over Zs in " << chrono::duration_cast<chrono::microseconds>(zeds-elecs).count() << " us\n";
+
+  for ( edm::View<pat::Photon>::const_iterator iPho = photonHandle->begin(); iPho != photonHandle->end(); ++iPho ) {
+    phoPt_    .push_back(iPho->pt());
+    phoEta_   .push_back(iPho->eta());
+    phoPhi_   .push_back(iPho->phi());
+    phoEnergy_.push_back(iPho->energy());
+    ++nPho_;
+  } // photon loop
+
+
+
+  for ( pat::TriggerObjectStandAlone obj : *triggerObjHandle ) {
+    obj.unpackPathNames(names);
+
+    vector<bool> hasFilters(eleFilterNames_.size(),false);
+    for ( string iFilter : obj.filterLabels() ) {
+      auto it = std::find(eleFilterNames_.begin(), eleFilterNames_.end(), iFilter);
+      if ( it != eleFilterNames_.end() ) {
+	hasFilters.at(it - eleFilterNames_.begin()) = true;
+      }
+    } // loop on filters
+
+    if ( std::any_of(hasFilters.begin(), hasFilters.end()-1, [](bool b){return b;}) ) {
+
+      TrigObjPt_    .push_back(obj.pt());
+      TrigObjEta_   .push_back(obj.eta());
+      TrigObjPhi_   .push_back(obj.phi());
+      TrigObjEnergy_.push_back(obj.energy());
+
+      // TriggerPhoton   = +81,
+      // TriggerElectron = +82,
+      // TriggerMuon     = +83,
+      // TriggerTau      = +84,
+      // TriggerTrack    = +91,
+      // TriggerCluster  = +92,
+      TrigObjType_.push_back( obj.triggerObjectTypes() );
+
+      TrigObjFiredFilters_.push_back(0U);
+      for ( size_t i = 0; i < hasFilters.size(); ++i ) {
+	TrigObjFiredFilters_.back() |= ( 0b1 << i );
+      }
+
+      TrigObjMatchedEle_.push_back(-1);
+      size_t ele_ind = 0U;
+      for ( edm::View<pat::Electron>::const_iterator iEle = electronHandle->begin(); iEle != electronHandle->end(); ++iEle ) {
+	double dR = dDeltaR(iEle->eta(), iEle->phi(), obj.eta(), obj.phi());
+	if ( dR < trigFilterDeltaRCut_ ) {
+	  TrigObjMatchedEle_.back() = ele_ind;
+	  eleFiredHLTFilters_.at(ele_ind) = TrigObjFiredFilters_.back();
+	} // trig obj matches electron
+	++ele_ind;
+      } // loop on electrons
+
+      ++nTO_;
+
+    } // has one of the HLT_Ele23_Ele12_... filters
+  } // trigger obj loop
 
   tree_->Fill();
   hEvents_->Fill(1.5); // processed event with electrons
