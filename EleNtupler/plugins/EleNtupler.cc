@@ -65,6 +65,7 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   hEvents_ = fs->make<TH1D>("hEvents", "total processed and skimmed events", 2, 0, 2);
 
   // Z data
+  tree_->Branch("nZ",     &nZ_);
   tree_->Branch("ZPt",    &ZPt_);
   tree_->Branch("ZPz",    &ZPz_);
   tree_->Branch("ZEta",   &ZEta_);
@@ -74,9 +75,9 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   tree_->Branch("Ze1",    &Ze1_);
 
   // global data
-  // tree_->Branch("run",             &run_);
-  // tree_->Branch("event",           &event_);
-  // tree_->Branch("lumis",           &lumis_);
+  tree_->Branch("run",             &run_);
+  tree_->Branch("event",           &event_);
+  tree_->Branch("lumis",           &lumis_);
   tree_->Branch("nVtx",            &nVtx_);
   // tree_->Branch("nGoodVtx",        &nGoodVtx_);
   // tree_->Branch("nTracksPV",       &nTracksPV_);
@@ -450,9 +451,9 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
   // edm::Handle<double> rhoCentralHandle;
   // e.getByToken(rhoCentralLabel_, rhoCentralHandle);
 
-  // run_    = e.id().run();
-  // event_  = e.id().event();
-  // lumis_  = e.luminosityBlock();
+  run_    = e.id().run();
+  event_  = e.id().event();
+  lumis_  = e.luminosityBlock();
   // rho_    = *(rhoHandle.product());
   // if ( rhoCentralHandle.isValid() ) { rhoCentral_ = *(rhoCentralHandle.product()); }
   // else { rhoCentral_ = -99.; }

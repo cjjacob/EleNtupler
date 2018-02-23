@@ -75,8 +75,8 @@ def main():
   searcher = eos_searcher()
   for job in searcher.jobs:
     # this process takes a while, so the poor man's solution is to run it in three terminals, one on each job
-    if job == "DoubleEG" or job == "SingleElectron":
-#    if job == "MC" or job == "DoubleEG":
+#    if job == "DoubleEG" or job == "SingleElectron":
+    if job == "MC" or job == "DoubleEG":
 #    if job == "MC" or job == "SingleElectron":
       continue
     count = 0

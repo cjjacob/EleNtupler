@@ -127,9 +127,9 @@ class EleNtupler : public edm::EDAnalyzer {
   double trigFilterDeltaRCut_;
 
   // global event data
-  // Int_t    run_;
-  // Long64_t event_;
-  // Int_t    lumis_;
+  Int_t    run_;
+  Long64_t event_;
+  Int_t    lumis_;
   Int_t    nVtx_;
   // Int_t    nGoodVtx_;
   // Int_t    nTracksPV_;
