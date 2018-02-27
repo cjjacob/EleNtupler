@@ -685,7 +685,9 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
 
       TrigObjFiredFilters_.push_back(0U);
       for ( size_t i = 0; i < hasFilters.size(); ++i ) {
-	TrigObjFiredFilters_.back() |= ( 0b1 << i );
+	if ( hasFilters.at(i) ) {
+	  TrigObjFiredFilters_.back() |= ( 0b1 << i );
+	}
       }
 
       TrigObjMatchedEle_.push_back(-1);
