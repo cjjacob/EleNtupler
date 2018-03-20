@@ -1,6 +1,7 @@
 import os
 from ROOT import *
 from subprocess import Popen, PIPE, call
+from time import sleep
 
 top_dir  = "Data/"
 sub_dirs = ["MC","SingleElectron"]#,"DoubleEG"]
@@ -9,7 +10,7 @@ for_semi = "/afs/cern.ch/work/c/cojacob/public/ForSemiray"
 here_data = "/afs/cern.ch/work/c/cojacob/public/CMSSW_8_0_27/src/EleNtupler/EleNtupler/python/Data"
 
 def MakeEfficiencyHistos(rfile):
-  tfile = TFile(rfile,"update")
+  tfile = TFile(rfile,"read")
 
   eelp = TH2F()
   eelp = tfile.Get("EtaEtaLooseElePass")
@@ -33,17 +34,17 @@ def MakeEfficiencyHistos(rfile):
   eemeff.SetTitle("DZ filt eff #eta #eta, med ID")
 
   dzmp = TH1F()
-  dzmp = tfile.Get("DZLooseElePass")
+  dzmp = tfile.Get("DZMedElePass")
   dzmt = TH1F()
-  dzmt = tfile.Get("DZLooseEleTotal")
-  dzmeff = TEfficiency(dzlp, dzlt)
+  dzmt = tfile.Get("DZMedEleTotal")
+  dzmeff = TEfficiency(dzmp, dzmt)
   dzmeff.SetTitle("DZ filt eff #Delta z, loose ID")
 
   dzmgp = TH1F()
-  dzmgp = tfile.Get("DZLooseElePass")
+  dzmgp = tfile.Get("DZMedEleGsfPass")
   dzmgt = TH1F()
-  dzmgt = tfile.Get("DZLooseEleTotal")
-  dzmgeff = TEfficiency(dzlp, dzlt)
+  dzmgt = tfile.Get("DZMedEleGsfTotal")
+  dzmgeff = TEfficiency(dzmgp, dzmgt)
   dzmgeff.SetTitle("DZ filt eff #Delta z, loose ID")
 
   eetp = TH2F()
@@ -54,17 +55,18 @@ def MakeEfficiencyHistos(rfile):
   eeteff.SetTitle("DZ filt eff #eta #eta, tight ID")
 
   dztp = TH1F()
-  dztp = tfile.Get("DZLooseElePass")
+  dztp = tfile.Get("DZTightElePass")
   dztt = TH1F()
-  dztt = tfile.Get("DZLooseEleTotal")
-  dzteff = TEfficiency(dzlp, dzlt)
+  dztt = tfile.Get("DZTightEleTotal")
+  dzteff = TEfficiency(dztp, dztt)
   dzteff.SetTitle("DZ filt eff #Delta z, loose ID")
 
-#  tfile.Close()
-#  outfile = rfile[:-5]
-#  outfile += "_Eff.root"
-#  out = TFile(outfile,"recreate")
-#  ROOT.gFile = out
+  tfile.Close()
+  outfile = rfile[:-5]
+  outfile += "_Eff.root"
+  print outfile
+  out = TFile(outfile,"recreate")
+  ROOT.gFile = out
 
   eeleff.Write()
   dzleff.Write()
@@ -76,12 +78,13 @@ def MakeEfficiencyHistos(rfile):
   eeteff.Write()
   dzteff.Write()
 
-#  out.Close()
-  tfile.Close()
+  out.Close()
+#  tfile.Close()
   return
 
-def Combine(directory,outdir,name,exclude=[]):
-  root_files = []
+def Combine(directory,outdir,dz_name,boson_name,exclude=[]):
+  dz_root_files = []
+  boson_root_files = []
   for path, dirs, files in os.walk(directory):
     for exc in exclude:
       if exc in path:
@@ -89,25 +92,34 @@ def Combine(directory,outdir,name,exclude=[]):
     for f in files:
       if f.endswith(".root"):
         file_path = path + os.sep + f
-        root_files.append(file_path)
+        if "DZEff" in f:
+          dz_root_files.append(file_path)
+        if "BosonStrat" in f:
+          boson_root_files.append(file_path)
 
-  if not name.endswith(".root"):
-    name += ".root"
+  if not dz_name.endswith(".root"):
+    dz_name += ".root"
+  if not boson_name.endswith(".root"):
+    boson_name += ".root"
   if not outdir.endswith(os.sep):
     outdir += os.sep
-  command = ["hadd", "-f", outdir+name] + root_files[:-1]
-#  print command
-  process = Popen(command, stdout=PIPE, stderr=PIPE)
+
+  dz_command = ["hadd", "-f", outdir+dz_name] + dz_root_files
+  process = Popen(dz_command, stdout=PIPE, stderr=PIPE)
   stdout, stderr = process.communicate()
   print stdout
   print stderr
-  MakeEfficiencyHistos(outdir+name)
+
+  boson_command = ["hadd", "-f", outdir+boson_name] + boson_root_files
+  process = Popen(boson_command, stdout=PIPE, stderr=PIPE)
+  stdout, stderr = process.communicate()
+  print stdout
+  print stderr
   return
 
 def main():
   for sub in sub_dirs:
-#    Combine(top_dir+sub, for_semi, "DZfilterEff"+sub)
-    Combine(top_dir+sub, here_data, "DZfilterEff"+sub)
+    Combine(top_dir+sub, here_data, "DZFilterEff"+sub, "MultiBosonStrat"+sub)
 
 if __name__ == "__main__":
   main()

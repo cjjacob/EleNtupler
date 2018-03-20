@@ -20,6 +20,7 @@ EleNtupler = cms.EDAnalyzer(
   VtxBSLabel        = cms.InputTag("offlineBeamSpot"),
   electronSrc       = cms.InputTag("slimmedElectrons"),
   photonSrc         = cms.InputTag("slimmedPhotons"),
+  superClusterSrc   = cms.InputTag("reducedEgamma", "reducedSuperClusters", "PAT"),
   # PFAllCandidates   = cms.InputTag("particleFlow"),
   # packedPFCands     = cms.InputTag("packedPFCandidates"),
   # genParticleSrc    = cms.InputTag("genParticles"),

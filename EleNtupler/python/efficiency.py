@@ -16,14 +16,16 @@ Ele27FilterBit = 3;
 Trigger    = "HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ"
 TriggerBit = 5
 
-ptBins    = array('d', [0., 10., 15., 20., 25., 30., 40., 50.])
-nPtBins   = len(ptBins)-1
-etaBins   = array('d', [-2.4, -2.0, -1.6, -1.44, -1., -0.5, 0., 0.5, 1., 1.44, 1.6, 2.0, 2.4])
-nEtaBins  = len(etaBins)-1
-DZBins    = array('d', [0., 0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26])
-nDZBins   = len(DZBins)-1
-massBins  = array('d', [float(m) for m in range(61,122)])
-nMassBins = len(massBins)-1
+ptBins       = array('d', [0., 10., 15., 20., 25., 30., 40., 50.])
+nPtBins      = len(ptBins)-1
+etaBins      = array('d', [-2.4, -2.0, -1.6, -1.44, -1., -0.5, 0., 0.5, 1., 1.44, 1.6, 2.0, 2.4])
+nEtaBins     = len(etaBins)-1
+DZBins       = array('d', [0., 0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26, 0.30, 0.40, 0.50, 0.75, 1.00])
+nDZBins      = len(DZBins)-1
+massBins     = array('d', [float(m) for m in range(61,122)])
+nMassBins    = len(massBins)-1
+largeDZBins  = array('d',[0.5*dz for dz in range(21)])
+nLargeDZBins = len(largeDZBins)-1
 
 DRBins = array('d',[0.25*dr for dr in range(25)])
 nDRBins = len(DRBins)-1
@@ -33,9 +35,9 @@ nNVtxBins = len(nVtxBins)-1
 ZMass = 91.19 # PDG value
 eleMass = 0.000511
 
-elePtCut = 20.
+elePtCut = 10.
 ZMassWindow = 30.
-ZDzCut = 0.3
+ZDzCut = 10.
 
 def Test(ttree,maxEv=10):
   count = 0
@@ -148,7 +150,10 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
   hDZLooseP = TH1F("DZLooseElePass",  "DZLooseElePass;abs( z_{e_{0}}-z_{e_{1}} ) (cm)",  nDZBins, DZBins)
   hDZLooseT = TH1F("DZLooseEleTotal", "DZLooseEleTotal;abs( z_{e_{0}}-z_{e_{1}} ) (cm)", nDZBins, DZBins)
 
-  hDZDRNVtxP = TH3F("DZDRNVtxPass", "DZDRNVtxPass;abs( z_{e_{0}}-z_{e_{1}} ) (cm);#Delta R;nVtx",  nDZBins, DZBins, nDRBins, DRBins, nNVtxBins, nVtxBins)
+  hLargeDZLooseP = TH1F("LargeDZLooseElePass",  "LargeDZLooseElePass;abs( z_{e_{0}}-z_{e_{1}} ) (cm)",  nLargeDZBins, largeDZBins)
+  hLargeDZLooseT = TH1F("LargeDZLooseEleTotal", "LargeDZLooseEleTotal;abs( z_{e_{0}}-z_{e_{1}} ) (cm)", nLargeDZBins, largeDZBins)
+
+  hDZDRNVtxP = TH3F("DZDRNVtxPass", "DZDRNVtxPass;#Delta z (cm);#Delta R;nVtx",  nDZBins, DZBins, nDRBins, DRBins, nNVtxBins, nVtxBins)
   hDZDRNVtxT = TH3F("DZDRNVtxTotal", "DZDRNVtxTotal;#Delta z (cm);#Delta R;nVtx", nDZBins, DZBins, nDRBins, DRBins, nNVtxBins, nVtxBins)
 
   hMedEleP = TH2F("EtaEtaMedElePass",  "MedElePass;#eta_{1};#eta_{2}", nEtaBins, etaBins, nEtaBins, etaBins)
@@ -165,6 +170,9 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
 
   hDZTightP = TH1F("DZTightElePass",  "DZTightElePass;abs(z_{e_{0}}-z_{e_{1}}) (cm)",  nDZBins, DZBins)
   hDZTightT = TH1F("DZTightEleTotal", "DZTightEleTotal;abs(z_{e_{0}}-z_{e_{1}}) (cm)", nDZBins, DZBins)
+
+  hLargeDZTightP = TH1F("LargeDZTightElePass",  "LargeDZTightElePass;abs( z_{e_{0}}-z_{e_{1}} ) (cm)",  nLargeDZBins, largeDZBins)
+  hLargeDZTightT = TH1F("LargeDZTightEleTotal", "LargeDZTightEleTotal;abs( z_{e_{0}}-z_{e_{1}} ) (cm)", nLargeDZBins, largeDZBins)
 
   hZPtPzOppCorn = TH2F("ZPtPzOppCorn", "Z p_{T} p_{z} opp #eta corners;p_{T} (GeV);p_{z} (GeV)",  30, 0., 300., 30, -600., 600.)
   hZPtPzSimCorn = TH2F("ZPtPzSimCorn", "Z p_{T} p_{z} sim  #eta corners;p_{T} (GeV);p_{z} (GeV)", 30, 0., 300., 30, -600., 600.)
@@ -194,7 +202,7 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
         for Z in Zlist:
           e0, e1 = Z.eles()
           dz = abs(ev.eleZ[e0] - ev.eleZ[e1])
-          if dz <= 0.26: #open up to fail region ## pass definition of DZ filter
+          if dz <= ZDzCut: # attempt to keep pairs from same vertex
             if randint(0,1) == 0: # randomly swap the electrons so e0 isn't always the leading pt ele
               e0, e1 = e1, e0
             filt0 = ev.eleFiredHLTFilters[e0]
@@ -209,10 +217,12 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
                 #loose id eles
                 hLooseEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
                 hDZLooseT.Fill(dz)
+                hLargeDZLooseT.Fill(dz)
                 hDZDRNVtxT.Fill(dz, DR, ev.nVtx)
                 if filt0 & 4 > 0 and filt1 & 4 > 0:
                   hLooseEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
                   hDZLooseP.Fill(dz)
+                  hLargeDZLooseP.Fill(dz)
                   hDZDRNVtxP.Fill(dz, DR, ev.nVtx)
               if (id0>>2)&1 == 1 and (id1>>2)&1 == 1:
                 #medium id eles
@@ -227,15 +237,20 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
                 #tight id eles
                 hTightEleT.Fill(ev.eleEta[e0],ev.eleEta[e1])
                 hDZTightT.Fill(dz)
+                hLargeDZTightT.Fill(dz)
                 if filt0 & 4 > 0 and filt1 & 4 > 0:
                   hTightEleP.Fill(ev.eleEta[e0],ev.eleEta[e1])
                   hDZTightP.Fill(dz)
+                  hLargeDZTightP.Fill(dz)
 
   hLooseEleP.Write()
   hLooseEleT.Write()
 
   hDZLooseP.Write()
   hDZLooseT.Write()
+
+  hLargeDZLooseP.Write()
+  hLargeDZLooseT.Write()
 
   hMedEleP.Write()
   hMedEleT.Write()
@@ -252,6 +267,9 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
   hDZTightP.Write()
   hDZTightT.Write()
 
+  hLargeDZTightP.Write()
+  hLargeDZTightT.Write()
+
   hZPtPzOppCorn.Write()
   hZPtPzSimCorn.Write()
   hZPtPzCentral.Write()
@@ -259,6 +277,9 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
   hZMEtaOppCorn.Write()
   hZMEtaSimCorn.Write()
   hZMEtaCentral.Write()
+
+  hDZDRNVtxP.Write()
+  hDZDRNVtxT.Write()
 
   outfile.Close()
 
@@ -415,9 +436,9 @@ def main():
   tfile = TFile("electronNtupler.root","read")
   tree = tfile.Get("/EleNtupler/EventTree")
 #  Test(tree,80)
-  DoFilters(tree)
+#  DoFilters(tree)
   DoDZEff(tree)
-  DoDZExploration(tree)
+#  DoDZExploration(tree)
 
 if __name__ == "__main__":
   main()
