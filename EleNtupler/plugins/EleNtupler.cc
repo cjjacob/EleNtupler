@@ -283,6 +283,31 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
 
   hEvents_->Fill(0.5); // opened event
 
+  // Z data
+  nZ_ = 0;
+  ZPt_.clear();
+  ZPz_.clear();
+  ZEta_.clear();
+  ZPhi_.clear();
+  ZM_.clear();
+  Ze0_.clear();
+  Ze1_.clear();
+
+  // global data
+  run_ = -1;
+  event_ = -1;
+  lumis_ = -1;
+  nVtx_ = 0;
+  vtx_ = 0.0;
+  vty_ = 0.0;
+  vtz_ = 0.0;
+  bsx_ = 0.0;
+  bsy_ = 0.0;
+  bsz_ = 0.0;
+  HLTEle_ = 0;
+  HLTElePrescaled_ = 0;
+
+  // Ele data
   nEle_ = 0;
   eleCharge_.clear();
   eleEnergy_.clear();
@@ -340,6 +365,13 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
   phoEta_.clear();
   phoPhi_.clear();
   phoEnergy_.clear();
+
+  // SC
+  nSC_ = 0;
+  // scPt_.clear();
+  scEta_.clear();
+  scPhi_.clear();
+  scEnergy_.clear();
 
   // auto cleared = chrono::high_resolution_clock::now();
   // cout << "Cleared vecs in " << chrono::duration_cast<chrono::microseconds>(cleared-start).count() << " us\n";
