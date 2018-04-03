@@ -194,6 +194,18 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
   hPtLeg2TightP = TH1F("PtLeg2TightPass",  "p_{T,e} leg 2, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
   hPtLeg2TightT = TH1F("PtLeg2TightTotal", "p_{T,e} leg 2, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
 
+  hIsoLeg1LooseP = TH1F("IsoLeg1LoosePass",  "p_{T,e} leg 1, loose ID;p_{T,e} (GeV)", nPtBins, ptBins)
+  hIsoLeg1LooseT = TH1F("IsoLeg1LooseTotal", "p_{T,e} leg 1, loose ID;p_{T,e} (GeV)", nPtBins, ptBins)
+
+  hIsoLeg2LooseP = TH1F("IsoLeg2LoosePass",  "p_{T,e} leg 2, loose ID;p_{T,e} (GeV)", nPtBins, ptBins)
+  hIsoLeg2LooseT = TH1F("IsoLeg2LooseTotal", "p_{T,e} leg 2, loose ID;p_{T,e} (GeV)", nPtBins, ptBins)
+
+  hIsoLeg1TightP = TH1F("IsoLeg1TightPass",  "p_{T,e} leg 1, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
+  hIsoLeg1TightT = TH1F("IsoLeg1TightTotal", "p_{T,e} leg 1, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
+
+  hIsoLeg2TightP = TH1F("IsoLeg2TightPass",  "p_{T,e} leg 2, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
+  hIsoLeg2TightT = TH1F("IsoLeg2TightTotal", "p_{T,e} leg 2, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
+
   for ev in ttree:
     if ev.nEle > 1:
       for iZ in range(len(ev.ZM)):
@@ -251,6 +263,36 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
                   hPtLeg1TightP.Fill(ev.elePt[e1])
                 if filt0 & 128 > 0:
                   hPtLeg2TightP.Fill(ev.elePt[e1])
+            if filt0 & 16 > 0 and filt1 & 16 > 0:
+              # the electrons passed the filter before the Iso filters
+              if id0 & 2 > 0: # loose ID
+                hIsoLeg1LooseT.Fill(ev.elePt[e0])
+                hIsoLeg2LooseT.Fill(ev.elePt[e0])
+                if filt0 & 1 > 0:
+                  hIsoLeg1LooseP.Fill(ev.elePt[e0])
+                if filt0 & 2 > 0:
+                  hIsoLeg2LooseP.Fill(ev.elePt[e0])
+              if id0 & 8 > 0: # tight ID
+                hIsoLeg1TightT.Fill(ev.elePt[e0])
+                hIsoLeg2TightT.Fill(ev.elePt[e0])
+                if filt0 & 1 > 0:
+                  hIsoLeg1TightP.Fill(ev.elePt[e0])
+                if filt0 & 2 > 0:
+                  hIsoLeg2TightP.Fill(ev.elePt[e0])
+              if id1 & 2 > 0: # loose ID
+                hIsoLeg1LooseT.Fill(ev.elePt[e1])
+                hIsoLeg2LooseT.Fill(ev.elePt[e1])
+                if filt0 & 1 > 0:
+                  hIsoLeg1LooseP.Fill(ev.elePt[e1])
+                if filt0 & 2 > 0:
+                  hIsoLeg2LooseP.Fill(ev.elePt[e1])
+              if id1 & 8 > 0: # tight ID
+                hIsoLeg1TightT.Fill(ev.elePt[e1])
+                hIsoLeg2TightT.Fill(ev.elePt[e1])
+                if filt0 & 1 > 0:
+                  hIsoLeg1TightP.Fill(ev.elePt[e1])
+                if filt0 & 2 > 0:
+                  hIsoLeg2TightP.Fill(ev.elePt[e1])
             # the electrons each have to pass one of the filters
             if (filt0 & 1 > 0 and filt1 & 2 > 0) or (filt0 & 2 > 0 and filt1 & 1 > 0):
               # the non-DZ trigger is passed
@@ -332,6 +374,16 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
   hPtLeg1TightT.Write()
   hPtLeg2TightP.Write()
   hPtLeg2TightT.Write()
+
+  hIsoLeg1LooseP.Write()
+  hIsoLeg1LooseT.Write()
+  hIsoLeg2LooseP.Write()
+  hIsoLeg2LooseT.Write()
+
+  hIsoLeg1TightP.Write()
+  hIsoLeg1TightT.Write()
+  hIsoLeg2TightP.Write()
+  hIsoLeg2TightT.Write()
 
   outfile.Close()
 
