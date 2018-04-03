@@ -16,7 +16,7 @@ Ele27FilterBit = 3;
 Trigger    = "HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ"
 TriggerBit = 5
 
-ptBins       = array('d', [0., 10., 15., 20., 25., 30., 40., 50.])
+ptBins       = array('d', [0., 10., 12., 15., 20., 23., 25., 30., 40., 50.])
 nPtBins      = len(ptBins)-1
 etaBins      = array('d', [-2.4, -2.0, -1.6, -1.44, -1., -0.5, 0., 0.5, 1., 1.44, 1.6, 2.0, 2.4])
 nEtaBins     = len(etaBins)-1
@@ -182,6 +182,18 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
   hZMEtaSimCorn = TH2F("ZMEtaSimCorn", "Z m_{ee} #eta_{Z} sim #eta corners;m_{ee} (GeV);#eta", nMassBins, massBins, nEtaBins, etaBins)
   hZMEtaCentral = TH2F("ZMEtaCentral", "Z m_{ee} #eta_{Z} central #eta;m_{ee} (GeV);#eta",     nMassBins, massBins, nEtaBins, etaBins)
 
+  hPtLeg1LooseP = TH1F("PtLeg1LoosePass",  "p_{T,e} leg 1, loose ID;p_{T,e} (GeV)", nPtBins, ptBins)
+  hPtLeg1LooseT = TH1F("PtLeg1LooseTotal", "p_{T,e} leg 1, loose ID;p_{T,e} (GeV)", nPtBins, ptBins)
+
+  hPtLeg2LooseP = TH1F("PtLeg2LoosePass",  "p_{T,e} leg 2, loose ID;p_{T,e} (GeV)", nPtBins, ptBins)
+  hPtLeg2LooseT = TH1F("PtLeg2LooseTotal", "p_{T,e} leg 2, loose ID;p_{T,e} (GeV)", nPtBins, ptBins)
+
+  hPtLeg1TightP = TH1F("PtLeg1TightPass",  "p_{T,e} leg 1, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
+  hPtLeg1TightT = TH1F("PtLeg1TightTotal", "p_{T,e} leg 1, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
+
+  hPtLeg2TightP = TH1F("PtLeg2TightPass",  "p_{T,e} leg 2, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
+  hPtLeg2TightT = TH1F("PtLeg2TightTotal", "p_{T,e} leg 2, tight ID;p_{T,e} (GeV)", nPtBins, ptBins)
+
   for ev in ttree:
     if ev.nEle > 1:
       for iZ in range(len(ev.ZM)):
@@ -207,11 +219,41 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
               e0, e1 = e1, e0
             filt0 = ev.eleFiredHLTFilters[e0]
             filt1 = ev.eleFiredHLTFilters[e1]
+            id0 = ev.eleIDbit[e0]
+            id1 = ev.eleIDbit[e1]
+            if ( filt0 & 32 > 0 and filt1 & 32 > 0 ):
+              # the electrons have passed the filter before the Et filters
+              if id0 & 2 > 0: # loose ID
+                hPtLeg1LooseT.Fill(ev.elePt[e0])
+                hPtLeg2LooseT.Fill(ev.elePt[e0])
+                if filt0 & 64 > 0:
+                  hPtLeg1LooseP.Fill(ev.elePt[e0])
+                if filt0 & 128 > 0:
+                  hPtLeg2LooseP.Fill(ev.elePt[e0])
+              if id0 & 8 > 0: # tight ID
+                hPtLeg1TightT.Fill(ev.elePt[e0])
+                hPtLeg2TightT.Fill(ev.elePt[e0])
+                if filt0 & 64 > 0:
+                  hPtLeg1TightP.Fill(ev.elePt[e0])
+                if filt0 & 128 > 0:
+                  hPtLeg2TightP.Fill(ev.elePt[e0])
+              if id1 & 2 > 0: # loose ID
+                hPtLeg1LooseT.Fill(ev.elePt[e1])
+                hPtLeg2LooseT.Fill(ev.elePt[e1])
+                if filt0 & 64 > 0:
+                  hPtLeg1LooseP.Fill(ev.elePt[e1])
+                if filt0 & 128 > 0:
+                  hPtLeg2LooseP.Fill(ev.elePt[e1])
+              if id1 & 8 > 0: # tight ID
+                hPtLeg1TightT.Fill(ev.elePt[e1])
+                hPtLeg2TightT.Fill(ev.elePt[e1])
+                if filt0 & 64 > 0:
+                  hPtLeg1TightP.Fill(ev.elePt[e1])
+                if filt0 & 128 > 0:
+                  hPtLeg2TightP.Fill(ev.elePt[e1])
             # the electrons each have to pass one of the filters
             if (filt0 & 1 > 0 and filt1 & 2 > 0) or (filt0 & 2 > 0 and filt1 & 1 > 0):
               # the non-DZ trigger is passed
-              id0 = ev.eleIDbit[e0]
-              id1 = ev.eleIDbit[e1]
               DR = DeltaR(ev.eleEta[e0], ev.elePhi[e0], ev.eleEta[e1], ev.elePhi[e1])
               if (id0>>1)&1 == 1 and (id1>>1)&1 == 1:
                 #loose id eles
@@ -280,6 +322,16 @@ def DoDZEff(ttree,output="DZHistos.root",mode="recreate"):
 
   hDZDRNVtxP.Write()
   hDZDRNVtxT.Write()
+
+  hPtLeg1LooseP.Write()
+  hPtLeg1LooseT.Write()
+  hPtLeg2LooseP.Write()
+  hPtLeg2LooseT.Write()
+
+  hPtLeg1TightP.Write()
+  hPtLeg1TightT.Write()
+  hPtLeg2TightP.Write()
+  hPtLeg2TightT.Write()
 
   outfile.Close()
 

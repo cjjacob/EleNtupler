@@ -38,6 +38,7 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   // puCollection_             = consumes<vector<PileupSummaryInfo> >    (iConfig.getParameter<InputTag>("pileupCollection"));
   electronCollection_       = consumes<View<pat::Electron>>           (iConfig.getParameter<InputTag>("electronSrc"));
   photonCollection_         = consumes<View<pat::Photon>>             (iConfig.getParameter<InputTag>("photonSrc"));
+  superClusterCollection_   = consumes<View<reco::SuperCluster>>      (iConfig.getParameter<InputTag>("superClusterSrc"));
   // pfAllParticles_           = consumes<reco::PFCandidateCollection>   (iConfig.getParameter<InputTag>("PFAllCandidates"));
   // pckPFCandidateCollection_ = consumes<pat::PackedCandidateCollection>(iConfig.getParameter<InputTag>("packedPFCands"));
   // pckPFCdsLabel_            = consumes<vector<pat::PackedCandidate>>  (iConfig.getParameter<InputTag>("packedPFCands"));
@@ -153,7 +154,14 @@ EleNtupler::EleNtupler(const edm::ParameterSet& iConfig)
   tree_->Branch("phoPhi",    &phoPhi_);
   tree_->Branch("phoEnergy", &phoEnergy_);
 
-  eleFilterNames_ = {"hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLDZFilter","hltEle27WPTightGsfTrackIsoFilter"};
+  // supercluster
+  tree_->Branch("nSC",      &nSC_);
+  // tree_->Branch("scPt",     &scPt_);
+  tree_->Branch("scEta",    &scEta_);
+  tree_->Branch("scPhi",    &scPhi_);
+  tree_->Branch("scEnergy", &scEnergy_);
+
+  eleFilterNames_ = {"hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLDZFilter","hltEle27WPTightGsfTrackIsoFilter","hltEgammaEleGsfTrackIso","hltEGL1SingleAndDoubleEGOrPairFilter","hltEle23Ele12CaloIdLTrackIdLIsoVLEtLeg1Filter","hltEle23Ele12CaloIdLTrackIdLIsoVLEtLeg2Filter"};
 
 }
 
@@ -347,6 +355,9 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
 
   edm::Handle<edm::View<pat::Photon>> photonHandle;
   e.getByToken(photonCollection_, photonHandle);
+
+  edm::Handle<edm::View<reco::SuperCluster>> superClusterHandle;
+  e.getByToken(superClusterCollection_, superClusterHandle);
 
   bool cfg_changed = true;
   HLTConfigProvider hltCfg;
@@ -655,6 +666,14 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
     ++nPho_;
   } // photon loop
 
+  for ( edm::View<reco::SuperCluster>::const_iterator iSC = superClusterHandle->begin(); iSC != superClusterHandle->end(); ++iSC ) {
+    // scPt_    .push_back(iSC->pt());
+    scEta_   .push_back(iSC->eta());
+    scPhi_   .push_back(iSC->phi());
+    scEnergy_.push_back(iSC->energy());
+    ++nSC_;
+  } // super cluster loop
+
 
 
   for ( pat::TriggerObjectStandAlone obj : *triggerObjHandle ) {
@@ -668,7 +687,7 @@ EleNtupler::analyze(const edm::Event& e, const edm::EventSetup& es)
       }
     } // loop on filters
 
-    if ( std::any_of(hasFilters.begin(), hasFilters.end()-1, [](bool b){return b;}) ) {
+    if ( std::any_of(hasFilters.begin(), hasFilters.end(), [](bool b){return b;}) ) {
 
       TrigObjPt_    .push_back(obj.pt());
       TrigObjEta_   .push_back(obj.eta());
